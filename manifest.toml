@@ -1,0 +1,50 @@
+#:schema https://raw.githubusercontent.com/YunoHost/apps/main/schemas/manifest.v2.schema.json
+packaging_format = 2
+id = "arcenalportail"
+name = "ARCenal Portail"
+description.fr = "Portail équipier QSSE relié au module Dolibarr ARCenal QSSE"
+description.en = "Employee QSSE portal connected to the ARCenal QSSE Dolibarr module"
+version = "0.4.1~beta1+ynh1"
+maintainers = ["ARCenal"]
+
+[upstream]
+license = "GPL-3.0-or-later"
+code = "https://github.com/arcenal-coder/arcenalportail_ynh"
+
+[integration]
+yunohost = ">= 12.1"
+helpers_version = "2.1"
+architectures = "all"
+multi_instance = true
+ldap = true
+sso = true
+disk = "20M"
+ram.build = "20M"
+ram.runtime = "32M"
+
+[install]
+    [install.domain]
+    type = "domain"
+    [install.path]
+    type = "path"
+    default = "/mon-espace"
+    [install.init_main_permission]
+    type = "group"
+    default = "all_users"
+    [install.gateway_url]
+    ask.fr = "URL HTTPS de la passerelle du module ARCenal QSSE"
+    ask.en = "HTTPS URL of the ARCenal QSSE module gateway"
+    type = "url"
+    example = "https://erp.example.org/custom/arcenalqsse/gateway.php"
+    [install.gateway_key]
+    ask.fr = "Clé secrète de passerelle (64 caractères hexadécimaux)"
+    ask.en = "Gateway secret (64 hexadecimal characters)"
+    type = "password"
+
+[resources]
+    [resources.system_user]
+    [resources.install_dir]
+    [resources.permissions]
+    main.url = "/"
+    [resources.apt]
+packages = "php8.2-fpm, php8.2-curl, php8.2-mbstring"

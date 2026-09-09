@@ -1,0 +1,12 @@
+#!/bin/bash
+source _common.sh
+source /usr/share/yunohost/helpers
+ynh_script_progression "Mise à jour du portail ARCenal..."
+find "$install_dir/public" -mindepth 1 -delete
+cp -a ../sources/portal/public/. "$install_dir/public/"
+ynh_config_add --template="config.php" --destination="$install_dir/config.php"
+chmod 400 "$install_dir/config.php"
+chown -R "$app:www-data" "$install_dir"
+ynh_config_add_phpfpm
+ynh_config_add_nginx
+ynh_script_progression "Portail ARCenal mis à jour."

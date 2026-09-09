@@ -1,0 +1,9 @@
+#!/bin/bash
+source _common.sh
+source /usr/share/yunohost/helpers
+ynh_restore_file --origin_path="$install_dir"
+ynh_restore_file --origin_path="/etc/nginx/conf.d/$domain.d/$app.conf"
+ynh_restore_file --origin_path="/etc/php/$phpversion/fpm/pool.d/$app.conf"
+chown -R "$app:www-data" "$install_dir"
+ynh_systemctl --service=php$phpversion-fpm --action=reload
+ynh_systemctl --service=nginx --action=reload
