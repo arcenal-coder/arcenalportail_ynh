@@ -10,7 +10,7 @@
 
 ARCenal Portail permet aux équipiers d’effectuer leur MAT, de transmettre leurs remontées terrain et de contribuer aux actions PAO qui leur sont affectées. Le SSO/LDAP YunoHost authentifie l’utilisateur. Une passerelle HTTPS signée relie le portail au module ARCenal QSSE pour Dolibarr.
 
-**Version incluse :** 0.4.3~beta1+ynh1
+**Version incluse :** 0.4.3~beta1+ynh2
 
 ## Configuration
 
