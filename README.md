@@ -1,6 +1,6 @@
 # ARCenal Portail for YunoHost
 
-[![Install ARCenal Portail with YunoHost](https://install-app.yunohost.org/install-with-yunohost.svg)](https://install-app.yunohost.org/?app=arcenalportail)
+[![Install ARCenal Portail with YunoHost](https://install-app.yunohost.org/install-with-yunohost.svg)](https://onyx-ingenierie.com/yunohost/admin/#/apps/install-custom/https:%2F%2Fgithub.com%2Farcenal-coder%2Farcenalportail_ynh%2F)
 
 *[Lire ce README en français.](./README_fr.md)*
 
@@ -10,7 +10,7 @@
 
 ARCenal Portail gives employees an interface for MAT briefings, field reports and assigned PAO actions. YunoHost SSO/LDAP authenticates the user. Signed HTTPS requests connect the portal to the ARCenal QSSE module for Dolibarr.
 
-**Shipped version:** 0.4.2~beta1+ynh1
+**Shipped version:** 0.4.3~beta1+ynh1
 
 ## Configuration
 

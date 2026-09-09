@@ -4,7 +4,7 @@ id = "arcenalportail"
 name = "ARCenal Portail"
 description.fr = "Portail équipier QSSE relié au module Dolibarr ARCenal QSSE"
 description.en = "Employee QSSE portal connected to the ARCenal QSSE Dolibarr module"
-version = "0.4.2~beta1+ynh1"
+version = "0.4.3~beta1+ynh1"
 maintainers = ["ARCenal"]
 
 [upstream]
