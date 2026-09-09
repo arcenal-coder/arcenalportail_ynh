@@ -4,10 +4,19 @@ source /usr/share/yunohost/helpers
 ynh_script_progression "Mise à jour du portail ARCenal..."
 find "$install_dir/public" -mindepth 1 -delete
 cp -a ../sources/portal/public/. "$install_dir/public/"
-ynh_config_add --template="config.php" --destination="$install_dir/config.php"
-chmod 400 "$install_dir/config.php"
+
+# Older beta installations did not persist the gateway password as a YunoHost
+# setting. Preserve their working configuration instead of replacing it with an
+# empty secret. Newer installations can still regenerate it from their settings.
+if [[ -n "${gateway_url:-}" && -n "${gateway_key:-}" ]]; then
+    ynh_config_add --template="config.php" --destination="$install_dir/config.php"
+    chmod 400 "$install_dir/config.php"
+    arcenal_configure_gateway_permission
+else
+    ynh_print_warn "Existing gateway configuration preserved."
+fi
+
 chown -R "$app:www-data" "$install_dir"
 ynh_config_add_phpfpm
 ynh_config_add_nginx
-arcenal_configure_gateway_permission
 ynh_script_progression "Portail ARCenal mis à jour."
