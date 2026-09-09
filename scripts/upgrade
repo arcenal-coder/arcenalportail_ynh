@@ -9,4 +9,5 @@ chmod 400 "$install_dir/config.php"
 chown -R "$app:www-data" "$install_dir"
 ynh_config_add_phpfpm
 ynh_config_add_nginx
+arcenal_configure_gateway_permission
 ynh_script_progression "Portail ARCenal mis à jour."
