@@ -1,0 +1,35 @@
+#:schema https://github.com/YunoHost/apps/raw/main/schemas/config_panel.v1.schema.json
+
+version = "1.0"
+
+[main]
+name.fr = "Liaison QSSE"
+name.en = "QSSE connection"
+
+    [main.gateway]
+    name.fr = "Passerelle Dolibarr ARCenal QSSE"
+    name.en = "ARCenal QSSE Dolibarr gateway"
+    help.fr = "Copiez les deux valeurs générées dans Dolibarr > ARCenal QSSE > Configuration."
+    help.en = "Copy both values generated in Dolibarr > ARCenal QSSE > Configuration."
+    optional = false
+
+        [main.gateway.gateway_url]
+        ask.fr = "URL HTTPS de la passerelle"
+        ask.en = "Gateway HTTPS URL"
+        type = "url"
+        bind = "null"
+        pattern.regexp = '^https://.+/custom/arcenalqsse/gateway\.php$'
+        pattern.error.fr = "L’URL doit commencer par https:// et terminer par /custom/arcenalqsse/gateway.php."
+        pattern.error.en = "The URL must start with https:// and end with /custom/arcenalqsse/gateway.php."
+
+        [main.gateway.gateway_key]
+        ask.fr = "Nouvelle clé de liaison"
+        ask.en = "New connection key"
+        help.fr = "Collez la clé de 64 caractères affichée une seule fois par Dolibarr."
+        help.en = "Paste the 64-character key displayed once by Dolibarr."
+        type = "password"
+        bind = "null"
+        redact = true
+        pattern.regexp = '^[a-fA-F0-9]{64}$'
+        pattern.error.fr = "La clé doit contenir exactement 64 caractères hexadécimaux."
+        pattern.error.en = "The key must contain exactly 64 hexadecimal characters."
