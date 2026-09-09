@@ -5,7 +5,7 @@ $configPath=getenv('ARCENAL_PORTAL_CONFIG')?:'/etc/arcenal-qsse-portal/config.ph
 if(!is_file($configPath)){http_response_code(503);exit('Portail non configuré.');}
 $config=require $configPath;
 if(!is_array($config)||empty($config['trusted_sso'])||!filter_var($config['gateway_url']??'',FILTER_VALIDATE_URL)||parse_url($config['gateway_url'],PHP_URL_SCHEME)!=='https'){http_response_code(503);exit('Configuration de sécurité incomplète.');}
-$uid=$_SERVER['HTTP_REMOTE_USER']??$_SERVER['HTTP_YNH_USER']??'';
+$uid=$_SERVER['HTTP_REMOTE_USER']??$_SERVER['REMOTE_USER']??$_SERVER['HTTP_YNH_USER']??'';
 if(!preg_match('/^[a-zA-Z0-9._@-]{1,100}$/D',$uid)){http_response_code(401);exit('Connectez-vous depuis ARCenal Système.');}
 session_set_cookie_params(['httponly'=>true,'secure'=>true,'samesite'=>'Strict']);
 session_start();
