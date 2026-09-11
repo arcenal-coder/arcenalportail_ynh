@@ -1,9 +1,9 @@
 # Passage de relais
 
-Objectif : intégrer le socle OpenCode au paquet YunoHost.
+Objectif : fiabiliser la liaison ARCenal Portail vers ARCenal QSSE sur un serveur YunoHost.
 
-État : configuration, agents et règles de travail ajoutés; le code du paquet n’est pas modifié.
+État : version 0.5.0. La permission de la passerelle est créée sur l’instance Dolibarr correspondante et non sur le portail.
 
-Vérifications : configuration OpenCode et agents résolus localement; dépôt propre avant intégration.
+Vérifications : syntaxe Bash, manifeste TOML, tests de normalisation d’URL et revue du mécanisme de permissions YunoHost.
 
-Prochaine étape : ouvrir ce dépôt dans OpenCode Desktop, puis commencer une session dédiée à la prochaine évolution du paquet.
+Prochaine étape : valider la mise à niveau sur le serveur de recette et vérifier que seule la route gateway est publique.
