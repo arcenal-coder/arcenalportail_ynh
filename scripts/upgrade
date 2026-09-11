@@ -16,7 +16,14 @@ else
     gateway_url=$(php -r '$c = require $argv[1]; echo $c["gateway_url"] ?? "";' "$install_dir/config.php")
 fi
 
+gateway_url=$(arcenal_normalize_gateway_url "$gateway_url")
 [[ "$gateway_url" =~ ^https://.+/custom/arcenalqsse/gateway\.php$ ]] || ynh_die "Existing gateway URL is invalid."
+
+# Repair legacy installations where the gateway address was copied from a
+# formatted link and stored as Markdown in config.php.
+php -r '$path = $argv[1]; $config = require $path; $config["gateway_url"] = $argv[2]; file_put_contents($path, "<?php\nreturn " . var_export($config, true) . ";\n");' "$install_dir/config.php" "$gateway_url"
+chmod 400 "$install_dir/config.php"
+
 arcenal_configure_gateway_permission
 
 chown -R "$app:www-data" "$install_dir"
