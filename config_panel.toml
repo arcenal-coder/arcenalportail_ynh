@@ -28,6 +28,5 @@ name.en = "QSSE connection"
         help.en = "Paste the 64-character key displayed once by Dolibarr."
         type = "password"
         bind = "null"
-        redact = true
         pattern.regexp = '^[a-fA-F0-9]{64}$'
         pattern.error = "La clé doit contenir exactement 64 caractères hexadécimaux."
