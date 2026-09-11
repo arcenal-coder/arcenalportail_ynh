@@ -36,6 +36,6 @@ sudo yunohost app install https://github.com/arcenal-coder/arcenalportail_ynh --
 
 ## Liaison QSSE Dolibarr
 
-À partir de `0.4.13~ynh1`, la mise à jour du portail restaure automatiquement la permission technique qui permet au portail d’appeler la passerelle Dolibarr QSSE. Cette permission donne accès uniquement à l’URL de passerelle configurée, sans afficher de tuile YunoHost.
+À partir de `0.4.14~ynh1`, la mise à jour du portail restaure automatiquement la permission technique qui permet au portail d’appeler la passerelle Dolibarr QSSE. Cette permission donne accès uniquement à l’URL de passerelle configurée, sans afficher de tuile YunoHost.
 
-Si le portail affiche “La liaison QSSE est momentanément indisponible”, vérifiez d’abord que l’application installée est au moins en `0.4.13~ynh1`, puis relancez la mise à jour depuis le catalogue ARCenal.
+Si le portail affiche “La liaison QSSE est momentanément indisponible”, vérifiez d’abord que l’application installée est au moins en `0.4.14~ynh1`, puis relancez la mise à jour depuis le catalogue ARCenal.

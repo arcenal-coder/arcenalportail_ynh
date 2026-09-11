@@ -13,7 +13,7 @@ if [[ -n "${gateway_url:-}" && -n "${gateway_key:-}" ]]; then
     chmod 400 "$install_dir/config.php"
 else
     ynh_print_warn "Existing gateway configuration preserved."
-    gateway_url=$(ynh_exec_as "$app" php -r '$c = require $argv[1]; echo $c["gateway_url"] ?? "";' "$install_dir/config.php")
+    gateway_url=$(php -r '$c = require $argv[1]; echo $c["gateway_url"] ?? "";' "$install_dir/config.php")
 fi
 
 [[ "$gateway_url" =~ ^https://.+/custom/arcenalqsse/gateway\.php$ ]] || ynh_die "Existing gateway URL is invalid."
