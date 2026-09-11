@@ -7,6 +7,10 @@ arcenal_normalize_gateway_url() {
 }
 
 arcenal_configure_gateway_permission() {
+    # Keep the repair here as well: some legacy releases source this helper
+    # without passing through the normal configuration path first.
+    gateway_url=$(arcenal_normalize_gateway_url "$gateway_url")
+
     if ynh_permission_exists --permission="gateway"; then
         ynh_permission_url --permission="gateway" --url="$gateway_url" --auth_header=false
     else

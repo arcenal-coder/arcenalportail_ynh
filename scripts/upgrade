@@ -17,7 +17,17 @@ else
 fi
 
 gateway_url=$(arcenal_normalize_gateway_url "$gateway_url")
-[[ "$gateway_url" =~ ^https://.+/custom/arcenalqsse/gateway\.php$ ]] || ynh_die "Existing gateway URL is invalid."
+# Do not let a malformed legacy value prevent the application files from
+# being restored. The portal remains usable and its connection can then be
+# repaired from the app's dedicated link script.
+if [[ ! "$gateway_url" =~ ^https://.+/custom/arcenalqsse/gateway\.php$ ]]; then
+    ynh_print_warn "Gateway URL is malformed; portal update continues without changing its QSSE permission."
+    chown -R "$app:www-data" "$install_dir"
+    ynh_config_add_phpfpm
+    ynh_config_add_nginx
+    ynh_script_progression "Portail ARCenal mis à jour."
+    exit 0
+fi
 
 # Repair legacy installations where the gateway address was copied from a
 # formatted link and stored as Markdown in config.php.
