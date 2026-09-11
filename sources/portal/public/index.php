@@ -4,7 +4,8 @@
 $configPath=getenv('ARCENAL_PORTAL_CONFIG')?:'/etc/arcenal-qsse-portal/config.php';
 if(!is_file($configPath)){http_response_code(503);exit('Portail non configuré.');}
 $config=require $configPath;
-$paired=is_array($config)&&!empty($config['trusted_sso'])&&!empty($config['paired'])&&filter_var($config['gateway_url']??'',FILTER_VALIDATE_URL)&&parse_url($config['gateway_url'],PHP_URL_SCHEME)==='https'&&is_string($config['gateway_key']??null)&&preg_match('/^[a-fA-F0-9]{64}$/D',$config['gateway_key']);
+$gatewayEntity=is_array($config)&&is_int($config['gateway_entity']??null)?(int)$config['gateway_entity']:0;
+$paired=is_array($config)&&!empty($config['trusted_sso'])&&!empty($config['paired'])&&$gatewayEntity>0&&filter_var($config['gateway_url']??'',FILTER_VALIDATE_URL)&&parse_url($config['gateway_url'],PHP_URL_SCHEME)==='https'&&is_string($config['gateway_key']??null)&&preg_match('/^[a-fA-F0-9]{64}$/D',$config['gateway_key']);
 $uid=$_SERVER['HTTP_REMOTE_USER']??$_SERVER['REMOTE_USER']??$_SERVER['HTTP_YNH_USER']??'';
 if(!preg_match('/^[a-zA-Z0-9._@-]{1,100}$/D',$uid)){http_response_code(401);exit('Connectez-vous depuis ARCenal Système.');}
 session_set_cookie_params(['httponly'=>true,'secure'=>true,'samesite'=>'Strict']);
@@ -20,8 +21,8 @@ if(!$paired){
 }
 function esc($s):string{return htmlspecialchars((string)$s,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');}
 function gateway(array $input):array{
-    global $config,$uid;
-    $input['uid']=$uid;
+    global $config,$uid,$gatewayEntity;
+    $input['uid']=$uid;$input['entity']=$gatewayEntity;
     $body=json_encode($input,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
     $ts=(string)time();$nonce=bin2hex(random_bytes(16));
     $sig=hash_hmac('sha256',$ts."\n".$nonce."\n".$body,$config['gateway_key']);
