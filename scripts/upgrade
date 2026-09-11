@@ -11,10 +11,13 @@ cp -a ../sources/portal/public/. "$install_dir/public/"
 if [[ -n "${gateway_url:-}" && -n "${gateway_key:-}" ]]; then
     ynh_config_add --template="config.php" --destination="$install_dir/config.php"
     chmod 400 "$install_dir/config.php"
-    arcenal_configure_gateway_permission
 else
     ynh_print_warn "Existing gateway configuration preserved."
+    gateway_url=$(ynh_exec_as "$app" php -r '$c = require $argv[1]; echo $c["gateway_url"] ?? "";' "$install_dir/config.php")
 fi
+
+[[ "$gateway_url" =~ ^https://.+/custom/arcenalqsse/gateway\.php$ ]] || ynh_die "Existing gateway URL is invalid."
+arcenal_configure_gateway_permission
 
 chown -R "$app:www-data" "$install_dir"
 ynh_config_add_phpfpm

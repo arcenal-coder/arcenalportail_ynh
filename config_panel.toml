@@ -19,8 +19,7 @@ name.en = "QSSE connection"
         type = "url"
         bind = "null"
         pattern.regexp = '^https://.+/custom/arcenalqsse/gateway\.php$'
-        pattern.error.fr = "L’URL doit commencer par https:// et terminer par /custom/arcenalqsse/gateway.php."
-        pattern.error.en = "The URL must start with https:// and end with /custom/arcenalqsse/gateway.php."
+        pattern.error = "L’URL doit commencer par https:// et terminer par /custom/arcenalqsse/gateway.php."
 
         [main.gateway.gateway_key]
         ask.fr = "Nouvelle clé de liaison"
@@ -31,5 +30,4 @@ name.en = "QSSE connection"
         bind = "null"
         redact = true
         pattern.regexp = '^[a-fA-F0-9]{64}$'
-        pattern.error.fr = "La clé doit contenir exactement 64 caractères hexadécimaux."
-        pattern.error.en = "The key must contain exactly 64 hexadecimal characters."
+        pattern.error = "La clé doit contenir exactement 64 caractères hexadécimaux."
