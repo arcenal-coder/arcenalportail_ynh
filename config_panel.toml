@@ -1,5 +1,3 @@
-#:schema https://github.com/YunoHost/apps/raw/main/schemas/config_panel.v1.schema.json
-
 version = "1.0"
 
 [main]
@@ -7,13 +5,11 @@ name = "Liaison QSSE"
 
     [main.gateway]
     name = "Passerelle Dolibarr ARCenal QSSE"
-    help = "Copiez les deux valeurs générées dans Dolibarr > ARCenal QSSE > Configuration."
 
         [main.gateway.gateway_url]
         ask = "URL HTTPS de la passerelle"
-        type = "url"
+        type = "string"
 
         [main.gateway.gateway_key]
         ask = "Nouvelle clé de liaison"
-        help = "Collez la clé de 64 caractères affichée une seule fois par Dolibarr."
-        type = "password"
+        type = "string"

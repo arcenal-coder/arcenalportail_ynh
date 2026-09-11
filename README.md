@@ -10,7 +10,7 @@
 
 ARCenal Portail gives employees an interface for MAT briefings, field reports and assigned PAO actions. YunoHost SSO/LDAP authenticates the user. Signed HTTPS requests connect the portal to the ARCenal QSSE module for Dolibarr.
 
-**Shipped version:** 0.4.10~ynh1
+**Shipped version:** 0.4.11~ynh1
 
 ## Configuration
 
