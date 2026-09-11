@@ -4,36 +4,22 @@
 
 *[Read this README in English.](./README.md)*
 
-> Ce paquet installe le portail équipier QSSE ARCenal sur un serveur YunoHost.
+ARCenal Portail est l’espace mobile des équipiers : mise au travail, remontées terrain et suivi des actions PAO. L’authentification est assurée par le SSO/LDAP de YunoHost ; aucun équipier ne se connecte à Dolibarr.
 
-## Présentation
+## Installation
 
-ARCenal Portail permet aux équipiers d’effectuer leur MAT, de transmettre leurs remontées terrain et de contribuer aux actions PAO qui leur sont affectées. Le SSO/LDAP YunoHost authentifie l’utilisateur. Une passerelle HTTPS signée relie le portail au module ARCenal QSSE pour Dolibarr.
+1. Installez ARCenal Portail et sélectionnez le groupe YunoHost des équipiers.
+2. Dans Dolibarr, préparez l’appairage depuis **ARCenal QSSE > Configuration et connexions**.
+3. Installez **ARCenal Bridge** depuis le catalogue ARCenal. Il sélectionne le portail et Dolibarr, puis utilise le code temporaire affiché par le module.
 
-**Version incluse :** 0.5.0~ynh1
+Le portail peut être mis à jour indépendamment : ses mises à jour ne créent ni ne modifient une permission Dolibarr.
 
-## Configuration
+## Sécurité
 
-L’assistant demande l’URL HTTPS publique générée par ARCenal QSSE et sa clé de liaison de 64 caractères. Lorsque Dolibarr est installé sur le même serveur YunoHost, l’installation crée automatiquement une permission protégée limitée à la passerelle signée. Elle ne modifie jamais les accès Dolibarr ni les droits du groupe Direction.
+ARCenal Bridge est le seul composant qui gère la liaison technique. Il crée une permission YunoHost limitée au seul endpoint signé `/custom/arcenalqsse/gateway.php`. Les accès Dolibarr et le groupe Direction restent inchangés.
 
-Si l’administration web YunoHost n’affiche pas de panneau de configuration, relancer la liaison depuis le serveur avec :
+## Ressources
 
-```bash
-sudo /etc/yunohost/apps/arcenalportail/scripts/link_qsse arcenalportail
-```
-
-## Documentation et ressources
-
-- Dépôt du code applicatif : <https://github.com/arcenal-coder/arcenal-qsse>
-- Signaler un problème de paquet : <https://github.com/arcenal-coder/arcenalportail_ynh/issues>
-- Documentation de création des paquets YunoHost : <https://doc.yunohost.org/dev/packaging/>
-
-## Informations pour les développeurs
-
-```bash
-sudo yunohost app install https://github.com/arcenal-coder/arcenalportail_ynh --debug
-```
-
-## Liaison QSSE Dolibarr
-
-La permission technique est portée par l’application Dolibarr et non par le portail. Elle autorise seulement `/custom/arcenalqsse/gateway.php`, sans tuile YunoHost et avec la signature HMAC du module. Les autres écrans Dolibarr restent réservés à la Direction.
+- [Module ARCenal QSSE](https://github.com/arcenal-coder/arcenal-qsse)
+- [ARCenal Bridge](https://github.com/arcenal-coder/arcenalbridge_ynh)
+- [Signaler un problème](https://github.com/arcenal-coder/arcenalportail_ynh/issues)

@@ -1,41 +1,18 @@
 #!/bin/bash
-source _common.sh
 source /usr/share/yunohost/helpers
+
 ynh_script_progression "Mise à jour du portail ARCenal..."
+# Version 1 moves configuration to ARCenal Bridge. Remove the obsolete beta
+# panel so YunoHost no longer attempts to parse its unsupported fields.
+rm -f "/etc/yunohost/apps/$app/config_panel.toml"
+# The pairing configuration is managed by ARCenal Bridge and is deliberately
+# preserved across portal upgrades.
 find "$install_dir/public" -mindepth 1 -delete
 cp -a ../sources/portal/public/. "$install_dir/public/"
-
-# Older beta installations did not persist the gateway password as a YunoHost
-# setting. Preserve their working configuration instead of replacing it with an
-# empty secret. Newer installations can still regenerate it from their settings.
-if [[ -n "${gateway_url:-}" && -n "${gateway_key:-}" ]]; then
+if [[ ! -f "$install_dir/config.php" ]]; then
     ynh_config_add --template="config.php" --destination="$install_dir/config.php"
     chmod 400 "$install_dir/config.php"
-else
-    ynh_print_warn "Existing gateway configuration preserved."
-    gateway_url=$(php -r '$c = require $argv[1]; echo $c["gateway_url"] ?? "";' "$install_dir/config.php")
 fi
-
-gateway_url=$(arcenal_normalize_gateway_url "$gateway_url")
-# Do not let a malformed legacy value prevent the application files from
-# being restored. The portal remains usable and its connection can then be
-# repaired from the app's dedicated link script.
-if [[ ! "$gateway_url" =~ ^https://.+/custom/arcenalqsse/gateway\.php$ ]]; then
-    ynh_print_warn "Gateway URL is malformed; portal update continues without changing its QSSE permission."
-    chown -R "$app:www-data" "$install_dir"
-    ynh_config_add_phpfpm
-    ynh_config_add_nginx
-    ynh_script_progression "Portail ARCenal mis à jour."
-    exit 0
-fi
-
-# Repair legacy installations where the gateway address was copied from a
-# formatted link and stored as Markdown in config.php.
-php -r '$path = $argv[1]; $config = require $path; $config["gateway_url"] = $argv[2]; file_put_contents($path, "<?php\nreturn " . var_export($config, true) . ";\n");' "$install_dir/config.php" "$gateway_url"
-chmod 400 "$install_dir/config.php"
-
-arcenal_configure_gateway_permission
-
 chown -R "$app:www-data" "$install_dir"
 ynh_config_add_phpfpm
 ynh_config_add_nginx

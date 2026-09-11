@@ -2,9 +2,9 @@
 packaging_format = 2
 id = "arcenalportail"
 name = "ARCenal Portail"
-description.fr = "Portail équipier QSSE relié au module Dolibarr ARCenal QSSE"
-description.en = "Employee QSSE portal connected to the ARCenal QSSE Dolibarr module"
-version = "0.5.0~ynh1"
+description.fr = "Portail QSSE mobile des équipiers, appairé par ARCenal Bridge"
+description.en = "Mobile employee QSSE portal, paired by ARCenal Bridge"
+version = "1.0.0~ynh1"
 maintainers = ["ARCenal"]
 
 [upstream]
@@ -31,15 +31,7 @@ ram.runtime = "32M"
     [install.init_main_permission]
     type = "group"
     default = "all_users"
-    [install.gateway_url]
-    ask.fr = "URL HTTPS de la passerelle du module ARCenal QSSE"
-    ask.en = "HTTPS URL of the ARCenal QSSE module gateway"
-    type = "url"
-    example = "https://erp.example.org/custom/arcenalqsse/gateway.php"
-    [install.gateway_key]
-    ask.fr = "Clé secrète de passerelle (64 caractères hexadécimaux)"
-    ask.en = "Gateway secret (64 hexadecimal characters)"
-    type = "password"
+
 
 [resources]
     [resources.system_user]

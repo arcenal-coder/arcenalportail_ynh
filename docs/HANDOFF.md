@@ -1,9 +1,7 @@
 # Passage de relais
 
-Objectif : fiabiliser la liaison ARCenal Portail vers ARCenal QSSE sur un serveur YunoHost.
+Objectif : paquet ARCenal Portail autonome, appairé par ARCenal Bridge.
 
-État : version 0.5.0. La permission de la passerelle est créée sur l’instance Dolibarr correspondante et non sur le portail.
+État : branche `codex/portal-standalone-v1`. Les scripts d’installation et de mise à jour ne modifient plus Dolibarr, sa permission ou la configuration de la passerelle. La migration supprime le panneau de configuration bêta devenu obsolète. Le portail affiche une page d’état claire tant que Bridge ne l’a pas appairé.
 
-Vérifications : syntaxe Bash, manifeste TOML, tests de normalisation d’URL et revue du mécanisme de permissions YunoHost.
-
-Prochaine étape : valider la mise à niveau sur le serveur de recette et vérifier que seule la route gateway est publique.
+Vérifications à mener avant publication : validation du manifeste et des scripts, installation/mise à jour/suppression/restauration sur une instance YunoHost 12.1 de recette, puis test mobile SSO et remontée QSSE.

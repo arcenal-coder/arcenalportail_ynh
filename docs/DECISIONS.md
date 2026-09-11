@@ -1,7 +1,6 @@
 # Décisions
 
-- OpenCode Desktop est l’outil quotidien; Codex intervient pour une revue délicate, un blocage persistant ou une décision d’architecture.
-- OpenAI est utilisé par OAuth uniquement. Aucune clé API n’est stockée dans le projet.
-- Les conversations ne sont pas partageables. Les instructions, agents et décisions restent versionnés dans Git.
-- La compaction est automatique avec pruning des sorties d’outils; conserver les derniers tours est préférable à maintenir une session longue.
-- La permission SSOwat de la passerelle appartient à l’application Dolibarr détectée depuis l’URL de la passerelle. Elle est limitée au chemin de la passerelle, cachée, protégée et ne modifie jamais la permission principale Dolibarr.
+- ARCenal Portail reste une application SSO/LDAP autonome. Il ne crée ni ne modifie de permission d’un autre applicatif.
+- ARCenal Bridge est seul propriétaire de l’appairage inter-applications et de la permission YunoHost limitée à la passerelle QSSE.
+- L’appairage utilise un code à usage unique, valable vingt minutes. La clé HMAC durable n’est jamais demandée dans l’interface d’installation.
+- Les mises à jour sont publiées depuis des versions immuables, après qualification YunoHost complète (installation, mise à jour, suppression, restauration).

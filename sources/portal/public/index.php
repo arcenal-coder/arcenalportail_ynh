@@ -4,7 +4,7 @@
 $configPath=getenv('ARCENAL_PORTAL_CONFIG')?:'/etc/arcenal-qsse-portal/config.php';
 if(!is_file($configPath)){http_response_code(503);exit('Portail non configuré.');}
 $config=require $configPath;
-if(!is_array($config)||empty($config['trusted_sso'])||!filter_var($config['gateway_url']??'',FILTER_VALIDATE_URL)||parse_url($config['gateway_url'],PHP_URL_SCHEME)!=='https'){http_response_code(503);exit('Configuration de sécurité incomplète.');}
+$paired=is_array($config)&&!empty($config['trusted_sso'])&&!empty($config['paired'])&&filter_var($config['gateway_url']??'',FILTER_VALIDATE_URL)&&parse_url($config['gateway_url'],PHP_URL_SCHEME)==='https'&&is_string($config['gateway_key']??null)&&preg_match('/^[a-fA-F0-9]{64}$/D',$config['gateway_key']);
 $uid=$_SERVER['HTTP_REMOTE_USER']??$_SERVER['REMOTE_USER']??$_SERVER['HTTP_YNH_USER']??'';
 if(!preg_match('/^[a-zA-Z0-9._@-]{1,100}$/D',$uid)){http_response_code(401);exit('Connectez-vous depuis ARCenal Système.');}
 session_set_cookie_params(['httponly'=>true,'secure'=>true,'samesite'=>'Strict']);
@@ -13,6 +13,11 @@ if(($_SESSION['uid']??'')!==$uid){session_regenerate_id(true);$_SESSION=['uid'=>
 header("Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'");
 header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
+if(!$paired){
+    http_response_code(503);
+    ?><!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Configuration — ARCenal</title><link rel="stylesheet" href="qsse.css"></head><body><main class="setup-screen"><div class="setup-card"><span class="brand-mark">A</span><span class="eyebrow">ARCENAL SYSTÈME</span><h1>Le portail est prêt.</h1><p>La liaison QSSE doit être finalisée par l’administrateur depuis <strong>ARCenal Bridge</strong>. Une fois l’appairage terminé, rechargez cette page.</p></div></main></body></html><?php
+    exit;
+}
 function esc($s):string{return htmlspecialchars((string)$s,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');}
 function gateway(array $input):array{
     global $config,$uid;

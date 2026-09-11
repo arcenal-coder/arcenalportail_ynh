@@ -1,15 +1,11 @@
 #!/bin/bash
-source _common.sh
 source /usr/share/yunohost/helpers
 
 ynh_script_progression "Installation du portail ARCenal..."
-[[ "$gateway_url" =~ ^https:// ]] || ynh_die "La passerelle doit utiliser HTTPS."
-[[ "$gateway_key" =~ ^[a-fA-F0-9]{64}$ ]] || ynh_die "La clé doit contenir 64 caractères hexadécimaux."
 cp -a ../sources/portal/. "$install_dir/"
 ynh_config_add --template="config.php" --destination="$install_dir/config.php"
 chmod 400 "$install_dir/config.php"
 chown -R "$app:www-data" "$install_dir"
 ynh_config_add_phpfpm
 ynh_config_add_nginx
-arcenal_configure_gateway_permission
-ynh_script_progression "Portail ARCenal installé."
+ynh_script_progression "Portail ARCenal installé. Finalisez la liaison depuis ARCenal Bridge."
