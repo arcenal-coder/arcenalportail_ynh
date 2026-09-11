@@ -23,3 +23,6 @@ ARCenal Bridge is the sole owner of the technical connection. It creates a YunoH
 - [ARCenal QSSE module](https://github.com/arcenal-coder/arcenal-qsse)
 - [ARCenal Bridge](https://github.com/arcenal-coder/arcenalbridge_ynh)
 - [Report an issue](https://github.com/arcenal-coder/arcenalportail_ynh/issues)
+## Version 1.0.3
+
+The portal displays the five-business-day QVT weather indicator and whether today’s MAT has already been completed. A negative MAT alerts Management; it does not automatically create a PAO action.

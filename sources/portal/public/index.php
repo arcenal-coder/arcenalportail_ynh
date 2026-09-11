@@ -45,7 +45,7 @@ function displayName(string $name):string{
 $views=['home','mat','report','records','actions','documents','planning','habilitations','companionship','directory'];
 $view=(string)($_GET['view']??'home');
 if(!in_array($view,$views,true))$view='home';
-$error='';$success='';$sent=false;$data=['identity'=>$uid,'records'=>[],'actions'=>[],'mats'=>[]];
+$error='';$success='';$sent=false;$data=['identity'=>$uid,'records'=>[],'actions'=>[],'mats'=>[],'mto'=>['days'=>[],'weather'=>['icon'=>'—','label'=>'En attente de MAT'],'completed'=>0,'today_completed'=>false]];
 if($_SERVER['REQUEST_METHOD']==='POST'){
     if(!is_string($_POST['csrf']??null)||!hash_equals($_SESSION['csrf'],$_POST['csrf'])){http_response_code(403);exit('Formulaire expiré.');}
     try{
@@ -74,6 +74,9 @@ try{$data=gateway(['operation'=>'list']);}catch(Throwable $e){$error=$error?:'La
 $_SESSION['request_id']=$_SESSION['request_id']??bin2hex(random_bytes(16));
 $_SESSION['mat_request_id']=$_SESSION['mat_request_id']??bin2hex(random_bytes(16));
 $name=displayName($uid);$firstName=explode(' ',$name)[0];
+function mtoCard(array $mto):string{
+    $weather=is_array($mto['weather']??null)?$mto['weather']:['icon'=>'—','label'=>'En attente de MAT'];$html='<section class="mto-card"><div class="mto-head"><div><span class="eyebrow">MTO QVT</span><h2>Météo des 5 derniers jours ouvrés</h2></div><span class="mto-main" title="'.esc($weather['label']??'').'">'.esc($weather['icon']??'—').'</span></div><div class="mto-days">';foreach($mto['days']??[] as $day){$html.='<span class="mto-day '.esc($day['code']??'missing').(!empty($day['alert'])?' alert':'').'" title="'.esc(($day['date']??'').' — '.($day['label']??'')).'"><small>'.esc($day['day']??'').'</small>'.esc($day['icon']??'—').'</span>';}$html.='</div><p>'.(int)($mto['completed']??0).'/5 MAT renseignées — '.esc($weather['label']??'').'</p></section>';return $html;
+}
 $states=['submitted'=>'Soumise','qualified'=>'Qualifiée','treatment'=>'En traitement','open'=>'Ouverte','in_progress'=>'En cours','closed'=>'Close','classified'=>'Classée avec motif'];
 $openActions=count(array_filter($data['actions']??[],fn($a)=>in_array($a['status']??'',['open','in_progress'],true)));
 $active=function(string $target)use($view):string{return $view===$target?' aria-current="page" class="active"':'';};
@@ -106,7 +109,8 @@ $active=function(string $target)use($view):string{return $view===$target?' aria-
 <?php if($error):?><p class="alert error" role="alert"><?=esc($error)?></p><?php endif;?>
 <?php if($success):?><p class="alert success" role="status"><?=esc($success)?></p><?php endif;?>
 <?php if($view==='home'):?>
-<section class="welcome"><span class="eyebrow">MON ESPACE ÉQUIPIER</span><h1>Bonjour <?=esc($firstName)?>,</h1><p>Retrouvez les outils utiles à votre activité et contribuez simplement à l’amélioration continue.</p><div class="welcome-actions"><a class="button primary" href="?view=mat">Démarrer ma MAT</a><a class="button ghost" href="?view=report">Faire une remontée</a></div></section>
+<section class="welcome"><span class="eyebrow">MON ESPACE ÉQUIPIER</span><h1>Bonjour <?=esc($firstName)?>,</h1><p>Retrouvez les outils utiles à votre activité et contribuez simplement à l’amélioration continue.</p><div class="welcome-actions"><a class="button primary" href="?view=mat"><?=!empty($data['mto']['today_completed'])?'Ma MAT est enregistrée':'Démarrer ma MAT'?></a><a class="button ghost" href="?view=report">Faire une remontée</a></div></section>
+<?=mtoCard($data['mto']??[])?>
 <section class="section-heading"><div><span class="eyebrow">ACCÈS RAPIDE</span><h2>Mes services</h2></div></section>
 <div class="service-grid">
     <a class="service-card accent" href="?view=mat"><span class="service-icon">☀</span><span><strong>Mise au travail</strong><small>Vérifier mes conditions avant de commencer</small></span><i>›</i></a>
@@ -117,6 +121,7 @@ $active=function(string $target)use($view):string{return $view===$target?' aria-
 <section class="today-card"><div><span class="eyebrow">AUJOURD’HUI</span><h2>Votre sécurité commence avant l’intervention</h2><p>Quelques secondes suffisent pour confirmer vos conditions de travail.</p></div><a class="round-link" href="?view=mat" aria-label="Ouvrir ma mise au travail">→</a></section>
 <?php elseif($view==='mat'):?>
 <header class="page-heading"><a class="back" href="?view=home">← Retour</a><span class="eyebrow">QSSE / AVANT INTERVENTION</span><h1>Ma mise au travail</h1><p>Confirmez que les conditions sont réunies avant de démarrer votre activité.</p></header>
+<?=mtoCard($data['mto']??[])?>
 <form action="?view=mat" method="post" class="panel form-stack"><input type="hidden" name="csrf" value="<?=esc($_SESSION['csrf'])?>"><input type="hidden" name="form" value="mat">
 <div class="choice-block"><label>Comment vous sentez-vous aujourd’hui ?</label><div class="segmented"><label><input type="radio" name="mat_feeling" value="sun" checked><span>☀ Bien</span></label><label><input type="radio" name="mat_feeling" value="cloud"><span>☁ Moyen</span></label><label><input type="radio" name="mat_feeling" value="storm"><span>⚡ Mal</span></label></div></div>
 <?php foreach(['mat_equipment'=>'J’ai mon matériel et mes EPI','mat_documents'=>'Je maîtrise le PDP, le mode opératoire et la coactivité','mat_conditions'=>'Les conditions d’exécution sont réunies','mat_risks'=>'Les principaux risques sont maîtrisés'] as $field=>$label):?><div class="check-row"><span class="check-number">✓</span><label><strong><?=esc($label)?></strong><select name="<?=esc($field)?>" required><option value="yes">Oui</option><option value="<?=($field==='mat_risks'?'alert':'no')?>">Non</option></select></label></div><?php endforeach;?>

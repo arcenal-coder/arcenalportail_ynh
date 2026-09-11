@@ -4,7 +4,7 @@ id = "arcenalportail"
 name = "ARCenal Portail"
 description.fr = "Portail QSSE mobile des équipiers, appairé par ARCenal Bridge"
 description.en = "Mobile employee QSSE portal, paired by ARCenal Bridge"
-version = "1.0.2~ynh1"
+version = "1.0.3~ynh1"
 maintainers = ["ARCenal"]
 
 [upstream]

@@ -23,3 +23,6 @@ ARCenal Bridge est le seul composant qui gère la liaison technique. Il crée un
 - [Module ARCenal QSSE](https://github.com/arcenal-coder/arcenal-qsse)
 - [ARCenal Bridge](https://github.com/arcenal-coder/arcenalbridge_ynh)
 - [Signaler un problème](https://github.com/arcenal-coder/arcenalportail_ynh/issues)
+## Version 1.0.3
+
+Le portail affiche la MTO QVT des cinq derniers jours ouvrés et indique si la MAT du jour a déjà été enregistrée. Une MAT négative déclenche une alerte Direction ; elle ne crée pas automatiquement une action PAO.
