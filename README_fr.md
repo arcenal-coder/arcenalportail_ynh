@@ -10,11 +10,17 @@
 
 ARCenal Portail permet aux équipiers d’effectuer leur MAT, de transmettre leurs remontées terrain et de contribuer aux actions PAO qui leur sont affectées. Le SSO/LDAP YunoHost authentifie l’utilisateur. Une passerelle HTTPS signée relie le portail au module ARCenal QSSE pour Dolibarr.
 
-**Version incluse :** 0.4.11~ynh1
+**Version incluse :** 0.4.12~ynh1
 
 ## Configuration
 
 L’assistant demande l’URL HTTPS publique générée par ARCenal QSSE et sa clé de liaison de 64 caractères. Le module Dolibarr connecté reste un prérequis distinct.
+
+Si l’administration web YunoHost n’affiche pas de panneau de configuration, relancer la liaison depuis le serveur avec :
+
+```bash
+sudo /etc/yunohost/apps/arcenalportail/scripts/link_qsse arcenalportail
+```
 
 ## Documentation et ressources
 
