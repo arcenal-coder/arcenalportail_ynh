@@ -131,6 +131,7 @@ $active=function(string $target)use($view):string{return $view===$target?' aria-
 <?php if($success):?><p class="alert success" role="status"><?=esc($success)?></p><?php endif;?>
 <?php if($view==='home'):?>
 <section class="welcome"><span class="eyebrow">MON ESPACE ÉQUIPIER</span><h1>Bonjour <?=esc($firstName)?>,</h1><p>Retrouvez les outils utiles à votre activité et contribuez simplement à l’amélioration continue.</p><div class="welcome-actions"><a class="button primary" href="?view=mat"><?=!empty($data['mto']['today_completed'])?'Ma MAT est enregistrée':($matAvailable?'Démarrer ma MAT':'Voir ma mission')?></a><a class="button ghost" href="?view=report">Faire une remontée</a></div></section>
+<?php if($activeMission):$mission=$activeMission[0];?><section class="today-card"><div><span class="eyebrow">MISSION EN COURS</span><h2><?=esc($mission['project_label']??'Mission')?></h2><p><?=esc($mission['site_label']??'')?> · <?=esc($mission['starts_at']??'')?> → <?=esc($mission['ends_at']??'')?></p></div><a class="round-link" href="?view=planning" aria-label="Ouvrir ma mission">→</a></section><?php endif;?>
 <?=mtoCard($data['mto']??[])?>
 <section class="section-heading"><div><span class="eyebrow">ACCÈS RAPIDE</span><h2>Mes services</h2></div></section>
 <div class="service-grid">
