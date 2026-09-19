@@ -5,4 +5,8 @@ return [
     'paired' => false,
     'gateway_url' => '',
     'gateway_key' => '',
+    'sirh_paired' => false,
+    'sirh_gateway_url' => '',
+    'sirh_gateway_key' => '',
+    'sirh_gateway_entity' => 0,
 ];

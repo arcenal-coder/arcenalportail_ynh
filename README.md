@@ -26,3 +26,7 @@ ARCenal Bridge is the sole owner of the technical connection. It creates a YunoH
 ## Version 1.0.3
 
 The portal displays the five-business-day QVT weather indicator and whether today’s MAT has already been completed. A negative MAT alerts Management; it does not automatically create a PAO action.
+
+## Version 1.1.0
+
+The employee portal can display SIRH mission sheets in **My schedule** through a separate signed provider. Employees accept a mission or request its correction before starting work. QSSE remains available if the SIRH provider is not connected.

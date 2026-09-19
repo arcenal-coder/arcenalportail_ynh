@@ -26,3 +26,7 @@ ARCenal Bridge est le seul composant qui gère la liaison technique. Il crée un
 ## Version 1.0.3
 
 Le portail affiche la MTO QVT des cinq derniers jours ouvrés et indique si la MAT du jour a déjà été enregistrée. Une MAT négative déclenche une alerte Direction ; elle ne crée pas automatiquement une action PAO.
+
+## Version 1.1.0
+
+Le portail équipier peut afficher les fiches de mission SIRH dans **Mon planning** grâce à un fournisseur signé distinct. L’équipier accepte sa mission ou demande sa correction avant sa prise de poste. Le QSSE reste disponible si le fournisseur SIRH n’est pas connecté.

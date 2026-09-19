@@ -6,3 +6,7 @@
 - Les mises à jour sont publiées depuis des versions immuables, après qualification YunoHost complète (installation, mise à jour, suppression, restauration).
 - A MAT is a daily pre-work declaration. A negative result alerts the Dolibarr Direction group; PAO creation remains a qualified management decision.
 - The portal only renders the five-business-day MTO QVT returned by QSSE. It stores no QSSE record locally.
+
+## 2026-09-19 — Deux passerelles métier indépendantes
+
+Le portail conserve la passerelle QSSE et utilise une seconde passerelle SIRH, chacune avec sa clé, son entité Dolibarr et sa permission YunoHost limitée à son unique endpoint. Cette séparation permet d’installer QSSE seul, SIRH seul ou les deux, sans partager de secret ni rendre le portail indisponible lorsqu’un fournisseur est absent.

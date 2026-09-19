@@ -6,6 +6,8 @@ if(!is_file($configPath)){http_response_code(503);exit('Portail non configuré.'
 $config=require $configPath;
 $gatewayEntity=is_array($config)&&is_int($config['gateway_entity']??null)?(int)$config['gateway_entity']:0;
 $paired=is_array($config)&&!empty($config['trusted_sso'])&&!empty($config['paired'])&&$gatewayEntity>0&&filter_var($config['gateway_url']??'',FILTER_VALIDATE_URL)&&parse_url($config['gateway_url'],PHP_URL_SCHEME)==='https'&&is_string($config['gateway_key']??null)&&preg_match('/^[a-fA-F0-9]{64}$/D',$config['gateway_key']);
+$sirhEntity=is_array($config)&&is_int($config['sirh_gateway_entity']??null)?(int)$config['sirh_gateway_entity']:0;
+$sirhPaired=is_array($config)&&!empty($config['sirh_paired'])&&$sirhEntity>0&&filter_var($config['sirh_gateway_url']??'',FILTER_VALIDATE_URL)&&parse_url($config['sirh_gateway_url'],PHP_URL_SCHEME)==='https'&&is_string($config['sirh_gateway_key']??null)&&preg_match('/^[a-fA-F0-9]{64}$/D',$config['sirh_gateway_key']);
 $uid=$_SERVER['HTTP_REMOTE_USER']??$_SERVER['REMOTE_USER']??$_SERVER['HTTP_YNH_USER']??'';
 if(!preg_match('/^[a-zA-Z0-9._@-]{1,100}$/D',$uid)){http_response_code(401);exit('Connectez-vous depuis ARCenal Système.');}
 session_set_cookie_params(['httponly'=>true,'secure'=>true,'samesite'=>'Strict']);
@@ -34,6 +36,17 @@ function gateway(array $input):array{
     if(!is_array($data))throw new RuntimeException('Réponse indisponible.');
     return $data;
 }
+function sirhGateway(array $input): array{
+    global $config,$uid,$sirhEntity,$sirhPaired;
+    if(!$sirhPaired)throw new RuntimeException('Le planning SIRH n’est pas encore connecté.');
+    $input['uid']=$uid;$input['entity']=$sirhEntity;
+    $body=json_encode($input,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);$ts=(string)time();$nonce=bin2hex(random_bytes(16));
+    $sig=hash_hmac('sha256',$ts."\n".$nonce."\n".$body,$config['sirh_gateway_key']);$ch=curl_init($config['sirh_gateway_url']);
+    curl_setopt_array($ch,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$body,CURLOPT_RETURNTRANSFER=>true,CURLOPT_CONNECTTIMEOUT=>5,CURLOPT_TIMEOUT=>15,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_PROTOCOLS=>CURLPROTO_HTTPS,CURLOPT_HTTPHEADER=>['Content-Type: application/json','X-Arcenal-Timestamp: '.$ts,'X-Arcenal-Nonce: '.$nonce,'X-Arcenal-Signature: '.$sig]]);
+    $response=curl_exec($ch);$code=curl_getinfo($ch,CURLINFO_HTTP_CODE);
+    if($response===false||$code!==200)throw new RuntimeException('Le planning est momentanément indisponible.');
+    $data=json_decode($response,true,16,JSON_THROW_ON_ERROR);if(!is_array($data))throw new RuntimeException('Réponse SIRH indisponible.');return $data;
+}
 function initials(string $name):string{
     $parts=preg_split('/[._@-]+/',$name,-1,PREG_SPLIT_NO_EMPTY)?:[];
     return strtoupper(substr($parts[0]??'A',0,1).substr($parts[1]??'',0,1));
@@ -45,11 +58,15 @@ function displayName(string $name):string{
 $views=['home','mat','report','records','actions','documents','planning','habilitations','companionship','directory'];
 $view=(string)($_GET['view']??'home');
 if(!in_array($view,$views,true))$view='home';
-$error='';$success='';$sent=false;$data=['identity'=>$uid,'records'=>[],'actions'=>[],'mats'=>[],'mto'=>['days'=>[],'weather'=>['icon'=>'—','label'=>'En attente de MAT'],'completed'=>0,'today_completed'=>false]];
+$error='';$success='';$sent=false;$sirhData=['missions'=>[]];$data=['identity'=>$uid,'records'=>[],'actions'=>[],'mats'=>[],'mto'=>['days'=>[],'weather'=>['icon'=>'—','label'=>'En attente de MAT'],'completed'=>0,'today_completed'=>false]];
 if($_SERVER['REQUEST_METHOD']==='POST'){
     if(!is_string($_POST['csrf']??null)||!hash_equals($_SESSION['csrf'],$_POST['csrf'])){http_response_code(403);exit('Formulaire expiré.');}
     try{
-        if(($_POST['form']??'report')==='action'){
+        if(($_POST['form']??'report')==='mission_accept'){
+            sirhGateway(['operation'=>'missions.accept','mission_uid'=>(string)($_POST['mission_uid']??''),'revision'=>(int)($_POST['revision']??0)]);$success='Mission acceptée.';$view='planning';
+        }elseif(($_POST['form']??'report')==='mission_refuse'){
+            sirhGateway(['operation'=>'missions.refuse','mission_uid'=>(string)($_POST['mission_uid']??''),'revision'=>(int)($_POST['revision']??0),'reason'=>(string)($_POST['reason']??'')]);$success='Demande de correction envoyée au manager.';$view='planning';
+        }elseif(($_POST['form']??'report')==='action'){
             $res=gateway(['operation'=>'action.progress','request_id'=>(string)($_POST['request_id']??''),'action_id'=>(int)($_POST['action_id']??0),'version'=>(int)($_POST['version']??0),'progress'=>(int)($_POST['progress']??-1),'note'=>(string)($_POST['note']??'')]);
             $success='Avancement enregistré pour '.$res['reference'].'.';$view='actions';
         }elseif(($_POST['form']??'report')==='mat'){
@@ -71,6 +88,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }catch(Throwable $e){$error=$e->getMessage();}
 }
 try{$data=gateway(['operation'=>'list']);}catch(Throwable $e){$error=$error?:'La liaison QSSE est momentanément indisponible. Vous pouvez consulter le portail, mais les données ne sont pas actualisées.';}
+if($sirhPaired){try{$sirhData=sirhGateway(['operation'=>'missions.list']);}catch(Throwable $e){if($view==='planning')$error=$error?:$e->getMessage();}}
 $_SESSION['request_id']=$_SESSION['request_id']??bin2hex(random_bytes(16));
 $_SESSION['mat_request_id']=$_SESSION['mat_request_id']??bin2hex(random_bytes(16));
 $name=displayName($uid);$firstName=explode(' ',$name)[0];
@@ -137,8 +155,11 @@ $active=function(string $target)use($view):string{return $view===$target?' aria-
 <header class="page-heading"><a class="back" href="?view=home">← Retour</a><span class="eyebrow">QSSE / PLAN D’ACTION OPÉRATIONNEL</span><h1>Mes actions PAO</h1><p>Consultez vos échéances et rendez compte de l’avancement.</p></header><div class="card-list"><?php if(empty($data['actions'])):?><div class="empty"><span>↗</span><strong>Aucune action affectée</strong><p>Les actions dont vous êtes pilote apparaîtront ici.</p></div><?php endif;?><?php foreach($data['actions']??[] as $pa):?><article class="action-card"><div class="record-top"><small><?=esc($pa['ref']??'')?></small><span class="status <?=esc($pa['status']??'')?>"><?=esc($states[$pa['status']??'']??($pa['status']??''))?></span></div><h3><?=esc($pa['title']??'')?></h3><div class="action-meta"><span><small>Échéance</small><strong><?=esc($pa['due_date']??'—')?></strong></span><span><small>Avancement</small><strong><?=esc($pa['progress']??0)?> %</strong></span></div><div class="progress"><i style="width:<?=max(0,min(100,(int)($pa['progress']??0)))?>%"></i></div><?php if(in_array($pa['status']??'',['open','in_progress'],true)):?><details><summary>Mettre à jour l’action</summary><form action="?view=actions" method="post" class="form-stack compact"><input type="hidden" name="csrf" value="<?=esc($_SESSION['csrf'])?>"><input type="hidden" name="form" value="action"><input type="hidden" name="action_id" value="<?=(int)($pa['rowid']??0)?>"><input type="hidden" name="version" value="<?=(int)($pa['version']??0)?>"><input type="hidden" name="request_id" value="<?=esc(bin2hex(random_bytes(16)))?>"><label>Nouvel avancement<input type="number" name="progress" min="0" max="100" value="<?=(int)($pa['progress']??0)?>" required></label><label>Compte rendu<textarea name="note" maxlength="5000" required></textarea></label><button class="button primary">Enregistrer</button></form></details><?php endif;?></article><?php endforeach;?></div>
 <?php elseif($view==='documents'):?>
 <header class="page-heading"><a class="back" href="?view=home">← Retour</a><span class="eyebrow">QSSE / MAÎTRISE DOCUMENTAIRE</span><h1>Documents applicables</h1><p>Accédez aux références utiles depuis un espace adapté au terrain.</p></header><div class="document-grid"><article class="document-card"><span>◫</span><div><h3>Politique QSSE</h3><p>Orientations et engagements de l’entreprise.</p></div><i>Bientôt disponible</i></article><article class="document-card"><span>▤</span><div><h3>DUER</h3><p>Document unique d’évaluation des risques.</p></div><i>Bientôt disponible</i></article><article class="document-card"><span>✓</span><div><h3>Liste des documents applicables</h3><p>Procédures, consignes et formulaires en vigueur.</p></div><i>Connexion QSSE à finaliser</i></article></div>
+<?php elseif($view==='planning'):?>
+<header class="page-heading"><a class="back" href="?view=home">← Retour</a><span class="eyebrow">MON PLANNING</span><h1>Mes missions</h1><p>Acceptez votre fiche de mission avant de réaliser votre MAT et votre pointage.</p></header>
+<div class="card-list"><?php if(empty($sirhData['missions'])):?><div class="empty"><span>▦</span><strong>Aucune mission disponible</strong><p>Les missions validées par votre manager apparaîtront ici.</p></div><?php endif;?><?php foreach($sirhData['missions']??[] as $mission):?><article class="action-card"><div class="record-top"><small><?=esc($mission['command_ref']??'')?></small><span class="status <?=esc($mission['status']??'')?>"><?=esc(($mission['status']??'')==='employee_validation'?'À valider':(($mission['status']??'')==='accepted'?'Acceptée':'En cours'))?></span></div><h3><?=esc($mission['project_label']??'Mission')?></h3><p><strong><?=esc($mission['site_label']??'')?></strong><br><?=esc($mission['starts_at']??'')?> → <?=esc($mission['ends_at']??'')?></p><p><?=nl2br(esc($mission['instructions']??''))?></p><?php if(($mission['status']??'')==='employee_validation'):?><form action="?view=planning" method="post" class="form-stack compact"><input type="hidden" name="csrf" value="<?=esc($_SESSION['csrf'])?>"><input type="hidden" name="mission_uid" value="<?=esc($mission['mission_uid']??'')?>"><input type="hidden" name="revision" value="<?=esc($mission['revision']??0)?>"><button class="button primary" name="form" value="mission_accept">Accepter ma mission</button><details><summary>Demander une correction</summary><label>Motif<textarea name="reason" maxlength="2000" required></textarea></label><button class="button ghost" name="form" value="mission_refuse">Envoyer la demande</button></details></form><?php endif;?></article><?php endforeach;?></div>
 <?php else:?>
-<?php $sirhPages=['planning'=>['Mon planning','Missions, présences et accès à la MAT.','▦'],'habilitations'=>['Formations et habilitations','Validités et autorisations employeur.','✓'],'companionship'=>['Compagnonnage','Parcours tuteur et suivi des équipiers.','♙'],'directory'=>['Annuaire société','Contacts professionnels accessibles aux équipiers.','☎']];$sirh=$sirhPages[$view];?>
+<?php $sirhPages=['habilitations'=>['Formations et habilitations','Validités et autorisations employeur.','✓'],'companionship'=>['Compagnonnage','Parcours tuteur et suivi des équipiers.','♙'],'directory'=>['Annuaire société','Contacts professionnels accessibles aux équipiers.','☎']];$sirh=$sirhPages[$view];?>
 <header class="page-heading"><a class="back" href="?view=home">← Retour</a><span class="eyebrow">ESPACE ÉQUIPIER / SIRH</span><h1><?=esc($sirh[0])?></h1><p><?=esc($sirh[1])?></p></header><section class="provider-card"><span><?=esc($sirh[2])?></span><div><span class="eyebrow">MODULE INDÉPENDANT</span><h2>Emplacement réservé au SIRH</h2><p>Cette page est prête à recevoir les données du module développé par Damien. Le connecteur commun utilisera l’identité LDAP déjà active.</p><ul><li>Navigation et affichage mobile disponibles</li><li>Contrat d’interopérabilité ARCenal prévu</li><li>Aucune donnée SIRH simulée</li></ul></div></section>
 <?php endif;?>
 </main>
