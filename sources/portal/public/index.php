@@ -70,6 +70,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             $res=gateway(['operation'=>'action.progress','request_id'=>(string)($_POST['request_id']??''),'action_id'=>(int)($_POST['action_id']??0),'version'=>(int)($_POST['version']??0),'progress'=>(int)($_POST['progress']??-1),'note'=>(string)($_POST['note']??'')]);
             $success='Avancement enregistré pour '.$res['reference'].'.';$view='actions';
         }elseif(($_POST['form']??'report')==='mat'){
+            if($sirhPaired){$current=sirhGateway(['operation'=>'missions.list']);$allowed=array_filter($current['missions']??[],static fn($mission):bool=>in_array($mission['status']??'', ['accepted','in_progress'],true)&&($mission['starts_at']??'')<=gmdate('Y-m-d H:i:s')&&($mission['ends_at']??'')>=gmdate('Y-m-d H:i:s'));if($allowed===[])throw new RuntimeException('Une mission acceptée et en cours est requise avant la MAT.');}
             $input=[];foreach(['mat_feeling','mat_equipment','mat_documents','mat_conditions','mat_risks','observation'] as $field)$input[$field]=is_string($_POST[$field]??null)?$_POST[$field]:'';
             $res=gateway(['operation'=>'mat.submit','request_id'=>(string)($_SESSION['mat_request_id']??''),'record'=>$input]);
             $success=$res['alert']?'MAT enregistrée. Contactez votre responsable et ne débutez pas dans ces conditions.':'MAT enregistrée. Bonne journée et prenez soin de vous.';
@@ -89,6 +90,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 }
 try{$data=gateway(['operation'=>'list']);}catch(Throwable $e){$error=$error?:'La liaison QSSE est momentanément indisponible. Vous pouvez consulter le portail, mais les données ne sont pas actualisées.';}
 if($sirhPaired){try{$sirhData=sirhGateway(['operation'=>'missions.list']);}catch(Throwable $e){if($view==='planning')$error=$error?:$e->getMessage();}}
+$activeMission=array_values(array_filter($sirhData['missions']??[],static fn($mission):bool=>in_array($mission['status']??'', ['accepted','in_progress'],true)&&($mission['starts_at']??'')<=gmdate('Y-m-d H:i:s')&&($mission['ends_at']??'')>=gmdate('Y-m-d H:i:s')));
+$matAvailable=!$sirhPaired||$activeMission!==[];
 $_SESSION['request_id']=$_SESSION['request_id']??bin2hex(random_bytes(16));
 $_SESSION['mat_request_id']=$_SESSION['mat_request_id']??bin2hex(random_bytes(16));
 $name=displayName($uid);$firstName=explode(' ',$name)[0];
@@ -127,7 +130,7 @@ $active=function(string $target)use($view):string{return $view===$target?' aria-
 <?php if($error):?><p class="alert error" role="alert"><?=esc($error)?></p><?php endif;?>
 <?php if($success):?><p class="alert success" role="status"><?=esc($success)?></p><?php endif;?>
 <?php if($view==='home'):?>
-<section class="welcome"><span class="eyebrow">MON ESPACE ÉQUIPIER</span><h1>Bonjour <?=esc($firstName)?>,</h1><p>Retrouvez les outils utiles à votre activité et contribuez simplement à l’amélioration continue.</p><div class="welcome-actions"><a class="button primary" href="?view=mat"><?=!empty($data['mto']['today_completed'])?'Ma MAT est enregistrée':'Démarrer ma MAT'?></a><a class="button ghost" href="?view=report">Faire une remontée</a></div></section>
+<section class="welcome"><span class="eyebrow">MON ESPACE ÉQUIPIER</span><h1>Bonjour <?=esc($firstName)?>,</h1><p>Retrouvez les outils utiles à votre activité et contribuez simplement à l’amélioration continue.</p><div class="welcome-actions"><a class="button primary" href="?view=mat"><?=!empty($data['mto']['today_completed'])?'Ma MAT est enregistrée':($matAvailable?'Démarrer ma MAT':'Voir ma mission')?></a><a class="button ghost" href="?view=report">Faire une remontée</a></div></section>
 <?=mtoCard($data['mto']??[])?>
 <section class="section-heading"><div><span class="eyebrow">ACCÈS RAPIDE</span><h2>Mes services</h2></div></section>
 <div class="service-grid">
@@ -140,10 +143,11 @@ $active=function(string $target)use($view):string{return $view===$target?' aria-
 <?php elseif($view==='mat'):?>
 <header class="page-heading"><a class="back" href="?view=home">← Retour</a><span class="eyebrow">QSSE / AVANT INTERVENTION</span><h1>Ma mise au travail</h1><p>Confirmez que les conditions sont réunies avant de démarrer votre activité.</p></header>
 <?=mtoCard($data['mto']??[])?>
+<?php if(!$matAvailable):?><section class="safety-note"><strong>Mission requise</strong><p>Acceptez votre fiche de mission dans votre planning avant de réaliser votre MAT.</p><a class="button primary" href="?view=planning">Ouvrir mon planning</a></section><?php else:?>
 <form action="?view=mat" method="post" class="panel form-stack"><input type="hidden" name="csrf" value="<?=esc($_SESSION['csrf'])?>"><input type="hidden" name="form" value="mat">
 <div class="choice-block"><label>Comment vous sentez-vous aujourd’hui ?</label><div class="segmented"><label><input type="radio" name="mat_feeling" value="sun" checked><span>☀ Bien</span></label><label><input type="radio" name="mat_feeling" value="cloud"><span>☁ Moyen</span></label><label><input type="radio" name="mat_feeling" value="storm"><span>⚡ Mal</span></label></div></div>
 <?php foreach(['mat_equipment'=>'J’ai mon matériel et mes EPI','mat_documents'=>'Je maîtrise le PDP, le mode opératoire et la coactivité','mat_conditions'=>'Les conditions d’exécution sont réunies','mat_risks'=>'Les principaux risques sont maîtrisés'] as $field=>$label):?><div class="check-row"><span class="check-number">✓</span><label><strong><?=esc($label)?></strong><select name="<?=esc($field)?>" required><option value="yes">Oui</option><option value="<?=($field==='mat_risks'?'alert':'no')?>">Non</option></select></label></div><?php endforeach;?>
-<label>Une observation à partager ?<textarea name="observation" maxlength="5000" rows="4" placeholder="Précisez si nécessaire…"></textarea></label><button class="button primary full">Enregistrer ma MAT</button></form>
+<label>Une observation à partager ?<textarea name="observation" maxlength="5000" rows="4" placeholder="Précisez si nécessaire…"></textarea></label><button class="button primary full">Enregistrer ma MAT</button></form><?php endif;?>
 <section><div class="section-heading"><div><h2>Mes dernières MAT</h2><p>Les 10 derniers enregistrements.</p></div></div><div class="card-list"><?php if(empty($data['mats'])):?><div class="empty"><span>☀</span><strong>Aucune MAT enregistrée</strong><p>Votre première MAT apparaîtra ici.</p></div><?php endif;?><?php foreach(array_slice($data['mats']??[],0,10) as $mat):?><article class="record-card"><div><small><?=esc($mat['datec']??'')?></small><h3><?=esc($mat['title']??'Mise au travail')?></h3></div><span class="status <?=((int)($mat['severity']??0)===3?'danger':'done')?>"><?=((int)($mat['severity']??0)===3?'Alerte':'Enregistrée')?></span></article><?php endforeach;?></div></section>
 <?php elseif($view==='report'):?>
 <header class="page-heading"><a class="back" href="?view=home">← Retour</a><span class="eyebrow">QSSE / AMÉLIORATION CONTINUE</span><h1>Faire une remontée terrain</h1><p>Décrivez les faits simplement. La Direction sera notifiée et pourra déclencher une action PAO.</p></header>
