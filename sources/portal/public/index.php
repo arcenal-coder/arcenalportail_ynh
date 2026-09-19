@@ -16,7 +16,7 @@ if(($_SESSION['uid']??'')!==$uid){session_regenerate_id(true);$_SESSION=['uid'=>
 header("Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'");
 header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
-if(!$paired){
+if(!$paired&&!$sirhPaired){
     http_response_code(503);
     ?><!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Configuration — ARCenal</title><link rel="stylesheet" href="qsse.css"></head><body><main class="setup-screen"><div class="setup-card"><span class="brand-mark">A</span><span class="eyebrow">ARCENAL SYSTÈME</span><h1>Le portail est prêt.</h1><p>La liaison QSSE doit être finalisée par l’administrateur depuis <strong>ARCenal Bridge</strong>. Une fois l’appairage terminé, rechargez cette page.</p></div></main></body></html><?php
     exit;
