@@ -1,9 +1,21 @@
 #!/bin/bash
 source ../settings/scripts/_common.sh
 source /usr/share/yunohost/helpers
+php_runtime="${php_version:-${phpversion:-8.2}}"
 ynh_restore "$install_dir"
+ynh_restore "$data_dir/logos"
 ynh_restore "/etc/nginx/conf.d/$domain.d/$app.conf"
-ynh_restore "/etc/php/$php_version/fpm/pool.d/$app.conf"
+ynh_restore "/etc/php/$php_runtime/fpm/pool.d/$app.conf"
+test -f "$install_dir/.backup/vigilance.sqlite" || ynh_die "Snapshot VIGIlance absent de la sauvegarde."
+touch "$install_dir/.maintenance"
+mkdir -p "$data_dir"
+chmod 700 "$data_dir"
+chown -R "$app:$app" "$data_dir"
 chown -R "$app:www-data" "$install_dir"
-ynh_systemctl --service="php$php_version-fpm" --action=reload
+chown "$app:$app" "$install_dir/config.php"
+chown "$app:$app" "$install_dir/application-settings.php"
+ynh_exec_as_app env ARCENAL_PORTAL_CONFIG="$install_dir/config.php" \
+    php"$php_runtime" "$install_dir/bin/manage.php" restore "$install_dir/.backup/vigilance.sqlite"
+rm -f "$install_dir/.maintenance"
+ynh_systemctl --service="php$php_runtime-fpm" --action=reload
 ynh_systemctl --service=nginx --action=reload

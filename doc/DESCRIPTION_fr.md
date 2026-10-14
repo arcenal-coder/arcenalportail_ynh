@@ -1,1 +1,1 @@
-Portail équipier d’ARCenal Système. L’authentification est assurée par le SSO/LDAP YunoHost ; les données QSSE sont transmises à Dolibarr par une passerelle HTTPS signée.
+VIGIlance, propulsé par ARCenal OS : dossiers collaborateurs, espace personnel, administration et permissions autonomes. Authentification SSO/LDAP YunoHost, stockage privé et marque client configurable. La connexion QSSE historique reste optionnelle via ARCenal Bridge ; Dolibarr ne conditionne pas le fonctionnement du SIRH.

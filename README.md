@@ -1,25 +1,24 @@
-# ARCenal Portal for YunoHost
-
-[![Install ARCenal Portal with YunoHost](https://install-app.yunohost.org/install-with-yunohost.svg)](https://onyx-ingenierie.com/yunohost/admin/#/apps/install-custom/https:%2F%2Fgithub.com%2Farcenal-coder%2Farcenalportail_ynh%2F)
+# VIGIlance for YunoHost — preview candidate 1.1.0-beta.1
 
 *[Lire ce README en français.](./README_fr.md)*
 
-ARCenal Portal is the mobile employee space for work-readiness checks, field reports and PAO action follow-up. YunoHost SSO/LDAP authenticates employees; they never log into Dolibarr.
+VIGIlance provides autonomous employee dossiers, personal access, HR management, team-scoped manager access and explicit permissions. YunoHost SSO authenticates accounts. Dolibarr is intended for future indicator dashboards and is not required for these features. The historical installed app id `arcenalportail` is preserved.
 
-## Installation
+## Preview update
 
-1. Install ARCenal Portal and select the YunoHost employee group.
-2. In Dolibarr, prepare pairing from **ARCenal QSSE > Configuration et connexions**.
-3. Install **ARCenal Bridge** from the ARCenal catalog. It selects the portal and Dolibarr, then uses the temporary module code.
+Candidate package: **1.1.0~beta1+ynh1**, branch **testing**.
+Source URL: https://github.com/arcenal-coder/arcenalportail_ynh/tree/testing
 
-Portal upgrades are independent: they never create or change a Dolibarr permission.
+Use a representative preview instance with a verified backup. Fresh installations explicitly select the initial administrator and company name. After upgrading an older installation, open the app's Configuration in YunoHost, select the initial administrator, save the choice and use the initialization button. The action verifies the YunoHost account and refuses to replace an existing active administrator. No first-login automatic elevation occurs.
 
-## Security
+## Compatibility and data
 
-ARCenal Bridge is the sole owner of the technical connection. It creates a YunoHost permission limited to the signed `/custom/arcenalqsse/gateway.php` endpoint. Dolibarr access and the Direction group remain unchanged.
+ARCenal Bridge remains the sole owner of QSSE pairing and Dolibarr gateway permissions. Upgrades preserve its config.php byte-for-byte. VIGIlance stores its private application settings separately, so later Bridge pairing cannot erase database access. No gateway key is requested by the installer.
 
-## Resources
+SQLite and client logos stay outside the public web root. The package includes migrations, consistent snapshots, backup/restore and an initial-admin configuration panel. Existing QSSE modules and historical identifiers are retained; their full autonomous port is a later work item.
 
-- [ARCenal QSSE module](https://github.com/arcenal-coder/arcenal-qsse)
-- [ARCenal Bridge](https://github.com/arcenal-coder/arcenalbridge_ynh)
-- [Report an issue](https://github.com/arcenal-coder/arcenalportail_ynh/issues)
+Local checks and lifecycle helper doubles passed. Real YunoHost installation, upgrade, SSO and restore still require acceptance. Publishing testing does not promote the pinned ARCenal preview/stable catalog feeds.
+
+- [Source application](https://github.com/arcenal-coder/arcenal-qsse)
+- [Operations](docs/VIGILANCE_LOT01.md)
+- [Local test report](docs/RECETTE_VIGILANCE_LOT01.md)

@@ -1,11 +1,11 @@
 #!/bin/bash
+source _common.sh
 source /usr/share/yunohost/helpers
 
-ynh_script_progression "Installation du portail ARCenal..."
+ynh_script_progression "Installation de VIGIlance..."
 cp -a ../sources/portal/. "$install_dir/"
-ynh_config_add --template="config.php" --destination="$install_dir/config.php"
-chmod 400 "$install_dir/config.php"
 chown -R "$app:www-data" "$install_dir"
+vigilance_configure
 ynh_config_add_phpfpm
 ynh_config_add_nginx
-ynh_script_progression "Portail ARCenal installé. Finalisez la liaison depuis ARCenal Bridge."
+ynh_script_progression "VIGIlance installé."

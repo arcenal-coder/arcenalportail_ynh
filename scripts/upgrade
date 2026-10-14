@@ -1,19 +1,16 @@
 #!/bin/bash
+source _common.sh
 source /usr/share/yunohost/helpers
-
-ynh_script_progression "Mise à jour du portail ARCenal..."
-# Version 1 moves configuration to ARCenal Bridge. Remove the obsolete beta
-# panel so YunoHost no longer attempts to parse its unsupported fields.
-rm -f "/etc/yunohost/apps/$app/config_panel.toml"
-# The pairing configuration is managed by ARCenal Bridge and is deliberately
-# preserved across portal upgrades.
-find "$install_dir/public" -mindepth 1 -delete
-cp -a ../sources/portal/public/. "$install_dir/public/"
-if [[ ! -f "$install_dir/config.php" ]]; then
-    ynh_config_add --template="config.php" --destination="$install_dir/config.php"
-    chmod 400 "$install_dir/config.php"
-fi
+ynh_script_progression "Mise à jour de VIGIlance..."
+touch "$install_dir/.maintenance"
+# Replace managed code without deleting configuration, data or historical files.
+for directory in public src views migrations bin; do
+    mkdir -p "$install_dir/$directory"
+    cp -a "../sources/portal/$directory/." "$install_dir/$directory/"
+done
 chown -R "$app:www-data" "$install_dir"
+vigilance_configure
 ynh_config_add_phpfpm
 ynh_config_add_nginx
-ynh_script_progression "Portail ARCenal mis à jour."
+rm -f "$install_dir/.maintenance"
+ynh_script_progression "VIGIlance mis à jour."

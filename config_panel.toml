@@ -1,0 +1,22 @@
+version = "1.0"
+
+[main]
+name.fr = "VIGIlance"
+name.en = "VIGIlance"
+
+[main.bootstrap]
+name.fr = "Administrateur initial"
+name.en = "Initial administrator"
+
+[main.bootstrap.initial_admin]
+ask.fr = "Utilisateur YunoHost à autoriser comme premier administrateur"
+ask.en = "YunoHost user to authorize as the first administrator"
+type = "user"
+optional = true
+bind = "settings"
+
+[main.bootstrap.bootstrap]
+ask.fr = "Initialiser le premier administrateur"
+ask.en = "Initialize the first administrator"
+type = "button"
+enabled = "initial_admin != ''"

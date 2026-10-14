@@ -3,5 +3,5 @@
 test_format = 1.0
 
 [default]
-args.gateway_url = "https://dolibarr.example.org/custom/arcenalqsse/gateway.php"
-args.gateway_key = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+args.initial_admin = "johndoe"
+args.company_name = "Entreprise de recette"

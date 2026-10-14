@@ -1,23 +1,23 @@
 <?php
 // SPDX-License-Identifier: GPL-3.0-or-later
 // This application must be deployed behind SSOwat, which authenticates the user.
-$configPath=getenv('ARCENAL_PORTAL_CONFIG')?:'/etc/arcenal-qsse-portal/config.php';
-if(!is_file($configPath)){http_response_code(503);exit('Portail non configuré.');}
-$config=require $configPath;
-$paired=is_array($config)&&!empty($config['trusted_sso'])&&!empty($config['paired'])&&filter_var($config['gateway_url']??'',FILTER_VALIDATE_URL)&&parse_url($config['gateway_url'],PHP_URL_SCHEME)==='https'&&is_string($config['gateway_key']??null)&&preg_match('/^[a-fA-F0-9]{64}$/D',$config['gateway_key']);
-$uid=$_SERVER['HTTP_REMOTE_USER']??$_SERVER['REMOTE_USER']??$_SERVER['HTTP_YNH_USER']??'';
-if(!preg_match('/^[a-zA-Z0-9._@-]{1,100}$/D',$uid)){http_response_code(401);exit('Connectez-vous depuis ARCenal Système.');}
-session_set_cookie_params(['httponly'=>true,'secure'=>true,'samesite'=>'Strict']);
-session_start();
-if(($_SESSION['uid']??'')!==$uid){session_regenerate_id(true);$_SESSION=['uid'=>$uid,'csrf'=>bin2hex(random_bytes(32))];}
+require_once __DIR__.'/../src/bootstrap.php';
+require_once __DIR__.'/../src/application.php';
+header('Cache-Control: no-store');
+header('X-Content-Type-Options: nosniff');
+header("Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'");
+try {
+    $context=vigilanceBootstrap();
+    $config=$context['config'];$uid=$context['uid'];
+    $requested=is_string($_GET['view']??null)?$_GET['view']:'home';
+    if(!in_array($requested,['mat','report','records','actions','documents'],true)){
+        vigilanceApplication($context,$requested);exit;
+    }
+    if(!$context['qsse']||(!$context['access']->has('qsse')&&!$context['access']->has('crp')))throw new DomainException('Fonction QSSE non autorisée ou non activée.');
+} catch(Throwable $failure) {vigilanceError($failure);exit;}
 header("Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'");
 header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
-if(!$paired){
-    http_response_code(503);
-    ?><!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Configuration — ARCenal</title><link rel="stylesheet" href="qsse.css"></head><body><main class="setup-screen"><div class="setup-card"><span class="brand-mark">A</span><span class="eyebrow">ARCENAL SYSTÈME</span><h1>Le portail est prêt.</h1><p>La liaison QSSE doit être finalisée par l’administrateur depuis <strong>ARCenal Bridge</strong>. Une fois l’appairage terminé, rechargez cette page.</p></div></main></body></html><?php
-    exit;
-}
 function esc($s):string{return htmlspecialchars((string)$s,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');}
 function gateway(array $input):array{
     global $config,$uid;
@@ -77,19 +77,15 @@ $states=['submitted'=>'Soumise','qualified'=>'Qualifiée','treatment'=>'En trait
 $openActions=count(array_filter($data['actions']??[],fn($a)=>in_array($a['status']??'',['open','in_progress'],true)));
 $active=function(string $target)use($view):string{return $view===$target?' aria-current="page" class="active"':'';};
 ?><!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#4f397c"><title>Mon espace — ARCenal</title><link rel="stylesheet" href="qsse.css"></head>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#4f397c"><title>QSSE — VIGIlance</title><link rel="stylesheet" href="qsse.css"></head>
 <body><div class="portal-shell">
 <input class="nav-control" type="checkbox" id="nav-control" aria-hidden="true">
 <label class="nav-overlay" for="nav-control" aria-label="Fermer le menu"></label>
 <aside class="side-nav" aria-label="Navigation principale">
-    <a class="brand" href="?view=home"><span class="brand-mark">A</span><span><strong>ARCenal</strong><small>Système</small></span></a>
+    <a class="brand" href="?view=home"><span class="brand-mark">V</span><span><strong>VIGIlance</strong><small>Propulsé par ARCenal OS</small></span></a>
     <nav>
         <p class="nav-label">Mon espace</p>
         <a href="?view=home"<?=$active('home')?>><span>⌂</span>Accueil équipier</a>
-        <a href="?view=planning"<?=$active('planning')?>><span>▦</span>Mon planning <small>SIRH</small></a>
-        <a href="?view=habilitations"<?=$active('habilitations')?>><span>✓</span>Habilitations <small>SIRH</small></a>
-        <a href="?view=companionship"<?=$active('companionship')?>><span>♙</span>Compagnonnage <small>SIRH</small></a>
-        <a href="?view=directory"<?=$active('directory')?>><span>☎</span>Annuaire société <small>SIRH</small></a>
         <p class="nav-label">QSSE</p>
         <a href="?view=mat"<?=$active('mat')?>><span>☀</span>Ma mise au travail</a>
         <a href="?view=report"<?=$active('report')?>><span>!</span>Remontée terrain</a>
@@ -100,7 +96,7 @@ $active=function(string $target)use($view):string{return $view===$target?' aria-
     <div class="account"><span class="avatar"><?=esc(initials($uid))?></span><span><strong><?=esc($firstName)?></strong><small><?=esc($uid)?></small></span></div>
 </aside>
 <div class="portal-main">
-<header class="topbar"><label class="menu-button" for="nav-control" aria-label="Ouvrir le menu"><i></i><i></i><i></i></label><a class="mobile-brand" href="?view=home"><span class="brand-mark">A</span><strong>ARCenal</strong></a><span class="top-identity"><?=esc($firstName)?></span></header>
+<header class="topbar"><label class="menu-button" for="nav-control" aria-label="Ouvrir le menu"><i></i><i></i><i></i></label><a class="mobile-brand" href="?view=home"><span class="brand-mark">V</span><strong>VIGIlance</strong></a><span class="top-identity"><?=esc($firstName)?></span></header>
 <main class="content">
 <?php if($error):?><p class="alert error" role="alert"><?=esc($error)?></p><?php endif;?>
 <?php if($success):?><p class="alert success" role="status"><?=esc($success)?></p><?php endif;?>

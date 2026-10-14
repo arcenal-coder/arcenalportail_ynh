@@ -1,0 +1,15 @@
+#!/bin/bash
+source _common.sh
+source /usr/share/yunohost/helpers
+
+run__bootstrap() {
+    local administrator php_runtime
+    administrator=$(ynh_app_setting_get --key=initial_admin)
+    [[ -n "$administrator" ]] || ynh_die "Sélectionnez un utilisateur YunoHost."
+    yunohost user info "$administrator" >/dev/null || ynh_die "Utilisateur YunoHost non vérifié."
+    php_runtime="${php_version:-${phpversion:-8.2}}"
+    ynh_exec_as_app env ARCENAL_PORTAL_CONFIG="$install_dir/config.php" \
+        php"$php_runtime" "$install_dir/bin/manage.php" bootstrap "$administrator"
+}
+
+ynh_app_config_run "$1"
