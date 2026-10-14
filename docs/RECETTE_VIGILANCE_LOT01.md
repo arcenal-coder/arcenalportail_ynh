@@ -55,10 +55,12 @@ La revue de suivi a confirmé les corrections et n'a trouvé aucun autre défaut
 
 ## Paquets et réserves de livraison
 
+Publication preview : sources sur `arcenal-qsse`, branche `preview/vigilance-lot01` ; paquet public sur `arcenalportail_ynh`, branche `testing`. La [recette GitHub 38621004804](https://github.com/arcenal-coder/arcenal-qsse/actions/runs/38621004804) est réussie sur le code `19473974ab8fa2be72eb1492800a963a04a64043` : services/HTTP autonomes, installation/cycle Dolibarr historique, capture mail, navigateur, API signée et build. Cette preuve CI n'est pas une recette YunoHost de l'installation cliente.
+
 Portail : `dist/arcenalportail_ynh-1.1.0-beta.1.zip`, SHA-256 `23d1bbeacc110a16b2ab0114ae6f371484017fb2adb9f6eac1a425b011103ab2`.
 
 Module QSSE historique : `dist/module_arcenalqsse-0.4.15.zip`, SHA-256 `1d961ee50ecb961cd0b3d6cd0a5fb57d0d2f193a9a920617e2f2ebabf81a4299`, identique à la baseline.
 
-Avant livraison cliente : identifier le paquet installé, vérifier SSO et permissions système, contrôler les dépendances PHP déclarées, exécuter le cycle YunoHost réel sur copie représentative et recevoir les parcours par rôle. Docker local reste inaccessible ; aucune nouvelle recette GitHub n'a été lancée ou publiée. La sauvegarde avec helpers doublés ne vaut pas preuve de restauration de l'infrastructure cliente.
+Avant livraison cliente : identifier le paquet installé, vérifier SSO et permissions système, contrôler les dépendances PHP déclarées, exécuter le cycle YunoHost réel sur copie représentative et recevoir les parcours par rôle. Docker local reste inaccessible. La sauvegarde avec helpers doublés ne vaut pas preuve de restauration de l'infrastructure cliente. Le catalogue ARCenal preview reste figé sur son ancienne révision ; sa promotion suit la procédure du catalogue après réception, et ne découle pas automatiquement du push sur testing.
 
 La V1 entière (coffre-fort/paie, onboarding, planning autonome, portage QSSE, export indicateurs Dolibarr) reste à réaliser dans les lots suivants. La candidate du lot 01 n'est pas déclarée livrée en production.

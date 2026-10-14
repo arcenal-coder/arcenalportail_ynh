@@ -6,4 +6,6 @@ Objectif actuel : publier la candidate VIGIlance lot 01 sur testing pour recette
 
 Contrôles locaux dans le dépôt applicatif : services, HTTP, navigateur, lifecycle avec helpers doublés et historique QSSE réussis ; revue du diff du paquet avant push. Aucun secret réel, aucune dépendance installée, aucun déploiement. Rapport dans RECETTE_VIGILANCE_LOT01.md.
 
+Publication effectuée : premier commit paquet 7fd8942, script de configuration exécutable dans 85aec17 ; sources applicatives publiées dans 1947397. CI source 38621004804 réussie (code 1947397), y compris régression connectée historique, services et navigateur autonome. Le paquet testing est accessible publiquement sans compte GitHub. Les commits documentaires ultérieurs ne modifient pas ce code qualifié en CI.
+
 Prochaine étape : mise à jour explicite de l'instance preview depuis testing, initialisation admin depuis Configuration YunoHost, puis installation/mise à jour/sauvegarde/restauration et SSO réels sur une recette représentative. Les catalogues ARCenal sont figés par révision et demandent leur procédure de promotion ; ils ne sont pas automatiquement modifiés par ce push.
