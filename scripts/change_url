@@ -1,0 +1,8 @@
+#!/bin/bash
+source _common.sh
+source /usr/share/yunohost/helpers
+
+ynh_script_progression "Modification de l'adresse de VIGIlance..."
+# The app uses relative URLs; its private data and Bridge configuration do not move.
+ynh_config_change_url_nginx
+ynh_script_progression "Adresse de VIGIlance modifiée."

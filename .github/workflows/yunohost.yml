@@ -1,0 +1,71 @@
+name: Qualify YunoHost package
+on:
+  workflow_dispatch:
+  push:
+    branches: [preview]
+    paths:
+      - manifest.toml
+      - tests.toml
+      - scripts/**
+      - conf/**
+      - sources/**
+      - tools/**
+      - .github/workflows/yunohost.yml
+permissions:
+  contents: read
+jobs:
+  qualification-tools:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest discover -s tools -p 'test_*.py' -v
+  package:
+    needs: qualification-tools
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Prepare isolated Incus runner
+        run: |
+          sudo systemctl stop docker.service docker.socket || true
+          sudo apt-get update
+          sudo apt-get install -y incus jq lynx btrfs-progs python3-toml python3-pycurl python3-bs4 python3-lxml python3-venv
+          sudo incus admin init --minimal
+          sudo incus remote add yunohost https://repo.yunohost.org/incus --protocol simplestreams --public
+          sudo usermod -a -G incus-admin root
+          sudo sysctl -w net.ipv4.ip_forward=1
+          sudo iptables -I FORWARD -i incusbr0 -j ACCEPT
+          sudo iptables -I FORWARD -o incusbr0 -j ACCEPT
+          sudo incus image copy yunohost:yunohost/bookworm-stable/appci local: --alias yunohost-bookworm-stable-appci
+      - name: Run official package checker
+        run: |
+          git clone https://github.com/YunoHost/package_check /tmp/package_check
+          git -C /tmp/package_check checkout f7d32cadac3cfced282decede024707fba9e6ec6
+          python3 -m venv --system-site-packages /tmp/package-check-env
+          /tmp/package-check-env/bin/pip install imgkit
+          python3 tools/prepare_package_check.py /tmp/package_check
+          python3 /tmp/package_check/lib/parse_tests_toml.py "$GITHUB_WORKSPACE" > /tmp/package_plan.json
+          sudo env PATH="/tmp/package-check-env/bin:$PATH" YNHDEV_BACKEND=incus DIST=bookworm YNH_BRANCH=stable /tmp/package_check/package_check.sh "$GITHUB_WORKSPACE"
+          sudo chown -R "$USER:$USER" /tmp/package_check
+          python3 /tmp/package_check/package_linter/package_linter.py "$GITHUB_WORKSPACE" --json > /tmp/linter_report.json
+          python3 tools/verify_package_report.py /tmp/package_check \
+            --linter-report /tmp/linter_report.json \
+            --expected-commit "$GITHUB_SHA" \
+            --qualification-output /tmp/arcenal-qualification.json
+      - name: Keep qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yunohost-qualification
+          path: |
+            /tmp/package_check/results_*.json
+            /tmp/package_check/full_log_*.log
+            /tmp/package_plan.json
+            /tmp/linter_report.json
+            /tmp/arcenal-qualification.json
+          if-no-files-found: warn
