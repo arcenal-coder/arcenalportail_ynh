@@ -13,6 +13,9 @@ on:
       - .github/workflows/yunohost.yml
 permissions:
   contents: read
+concurrency:
+  group: yunohost-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   qualification-tools:
     runs-on: ubuntu-24.04
