@@ -19,7 +19,7 @@ class QualificationTest(unittest.TestCase):
     def setUp(self):
         self.commit = 'a'*40
         tests = [{'test_type':kind,'test_arg':arg,'test_serie':'default','main_result':'success'} for kind,arg in sorted(REQUIRED)]
-        self.reports = [{'app':'arcenalportail','commit':self.commit,'app_version':'1.1.0~beta3+ynh1',
+        self.reports = [{'app':'arcenalportail','commit':self.commit,'app_version':'1.1.0-beta3~ynh1',
                          'architecture':'amd64','yunohost_version':'12.1','level':0,'tests':tests}]
         self.linter = {'error':{'AppCatalog.state_is_working':'absent community entry'},
                        'critical':{'AppCatalog.is_in_catalog':'private catalog'},'warning':[]}

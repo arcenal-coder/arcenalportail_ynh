@@ -2,7 +2,7 @@
 test_format = 1.0
 
 [default]
-args.initial_admin = "johndoe"
+args.initial_admin = "package_checker"
 args.company_name = "Entreprise de recette"
 args.init_main_permission = "all_users"
 preinstall = """
@@ -18,3 +18,6 @@ home.logged_on_sso = true
 home.expect_title = "VIGIlance"
 home.expect_content = "Paramètres"
 home.auto_test_assets = true
+anonymous.path = "/"
+anonymous.expect_return_code = 403
+anonymous.expect_title = "VIGIlance"
