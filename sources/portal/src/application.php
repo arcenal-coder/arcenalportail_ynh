@@ -6,7 +6,16 @@ function vigilanceApplication(array $context, string $view): void
     extract($context, EXTR_SKIP);
     $people = new \Vigilance\PersonService($db,$access);
     $admin = new \Vigilance\AdminService($db,$access);
+    $branding = new \Vigilance\Branding($db->directory.'/branding',(string)($config['branding_origin'] ?? ''));
     if ($view === 'logo') {
+        $image = $branding->image();
+        if ($image !== null) {
+            header('Content-Type: '.$image['mime']);
+            header('Content-Length: '.strlen($image['body']));
+            header('Content-Security-Policy: default-src \'none\'; sandbox');
+            print $image['body'];
+            return;
+        }
         $logo = $admin->company()['logo'];
         if (!preg_match('/^[a-f0-9]{64}\.(png|jpg|webp)$/D',$logo)) throw new DomainException('Logo non disponible.');
         $path = $db->directory.'/logos/'.$logo;
@@ -16,7 +25,7 @@ function vigilanceApplication(array $context, string $view): void
         readfile($path);
         return;
     }
-    $labels = ['employee'=>'Collaborateur','rh'=>'RH','manager'=>'Manager','direction'=>'Direction','admin'=>'Administration','qsse'=>'QSSE','crp'=>'CRP','tutor'=>'Tuteur'];
+    $labels = ['employee'=>'Équipier','rh'=>'RH','manager'=>'Manager','direction'=>'Direction','admin'=>'Administration','qsse'=>'QSSE','crp'=>'CRP','tutor'=>'Tuteur'];
     $statuses = ['candidate'=>'Candidat','onboarding'=>'En intégration','active'=>'Actif','leaving'=>'En sortie','archived'=>'Archivé'];
     $error = '';
     $notice = $_SESSION['notice'] ?? '';
@@ -24,6 +33,7 @@ function vigilanceApplication(array $context, string $view): void
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!is_string($_POST['csrf'] ?? null) || !hash_equals($_SESSION['csrf'],$_POST['csrf'])) throw new DomainException('Formulaire expiré.');
         try {
+            $successMessage = 'Enregistrement effectué.';
             $action = $_POST['action'] ?? '';
             $destination = '?view=home';
             if ($action === 'profile') {
@@ -40,6 +50,11 @@ function vigilanceApplication(array $context, string $view): void
             } elseif ($action === 'company') {
                 $admin->rename((string)($_POST['name'] ?? ''),(int)($_POST['revision'] ?? 0));
                 $destination = '?view=settings';
+            } elseif ($action === 'branding-refresh') {
+                $access->require('admin');
+                $refreshed = $branding->resolve(true);
+                $successMessage = $refreshed['error'] ? 'La synchronisation YunoHost est indisponible. L’application reste accessible.' : ($refreshed['available'] ? 'Le logo YunoHost a été vérifié.' : 'Aucun logo exploitable n’est déclaré dans YunoHost.');
+                $destination = '?view=settings';
             } elseif ($action === 'account') {
                 if (!is_array($_POST['roles'] ?? [])) throw new InvalidArgumentException('Rôles invalides.');
                 $teams = array_values(array_filter(array_map('trim',explode(',',(string)($_POST['teams'] ?? ''))),static fn($team) => $team !== ''));
@@ -52,7 +67,7 @@ function vigilanceApplication(array $context, string $view): void
                 $admin->setLogo(file_get_contents($upload['tmp_name']),(int)($_POST['revision'] ?? 0));
                 $destination = '?view=settings';
             } else throw new InvalidArgumentException('Action inconnue.');
-            $_SESSION['notice'] = 'Enregistrement effectué.';
+            $_SESSION['notice'] = $successMessage;
             header('Location: '.$destination,true,303);
             return;
         } catch (DomainException | InvalidArgumentException $failure) {
@@ -61,6 +76,8 @@ function vigilanceApplication(array $context, string $view): void
         }
     }
     $company = $admin->company();
+    $brandingStatus = $branding->resolve();
+    $hasBrandLogo = $brandingStatus['available'] || $company['logo'] !== '';
     $isRh = $access->has('rh');
     $isManager = $access->has('manager');
     $isEmployee = $access->has('employee');

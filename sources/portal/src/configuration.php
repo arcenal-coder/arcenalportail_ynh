@@ -13,7 +13,7 @@ final class Config
         $application = dirname($path).'/application-settings.php';
         if (is_file($application)) {
             $settings = require $application;
-            if (!is_array($settings) || array_diff(array_keys($settings),['database_path','company_id','company_name','initial_admin','qsse_enabled'])) throw new \RuntimeException('Configuration applicative invalide.');
+            if (!is_array($settings) || array_diff(array_keys($settings),['database_path','company_id','company_name','initial_admin','qsse_enabled','branding_origin'])) throw new \RuntimeException('Configuration applicative invalide.');
             $config = array_replace($config,$settings);
         }
         return $config;

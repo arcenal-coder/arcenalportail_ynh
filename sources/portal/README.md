@@ -1,6 +1,14 @@
-# VIGIlance — portail et dossiers autonomes · 1.1.0-beta.1
+# VIGIlance — portail et dossiers autonomes · 1.1.0-beta.2
 
 Le paquet YunoHost v2 conserve l'identifiant installé `arcenalportail`. Le nom visible devient VIGIlance, avec la signature « Propulsé par ARCenal OS ». PHP-FPM sert seulement `public/` ; services, migrations, configuration et données restent hors du web.
+
+## Rendu intégré — lot 02
+
+Le cadre réel reprend le thème Gratitude examiné en maquette : palette crème/vert léger, accent terracotta, typographie sans serif et cartes claires. Logo sans monogramme décoratif en haut à gauche, identité VIGIlance et signature éditeur ancrée en bas à droite. Le sélecteur de profil existant soumet un POST protégé ; il reste utilisable sans JavaScript.
+
+Le domaine principal est déterminé automatiquement à l'installation/mise à jour avec `yunohost domain main-domain --output-as json`. L'origine HTTPS est stockée dans `application-settings.php`, séparée de Bridge. Le logo est lu dans la configuration publique de ce domaine, avec cache privé de cinq minutes ; une indisponibilité conserve le dernier logo valide ou le repli existant. Le sous-domaine applicatif peut ainsi rester sans logo propre.
+
+Les paramètres proposent « Actualiser depuis YunoHost » ; le dépôt manuel historique est conservé comme logo de secours. Aucun secret ni cookie n'est envoyé à la source de branding. Voir [le rapport et les limites du lot 02](../docs/VIGILANCE_LOT02_IDENTITE.md).
 
 ## Fonctions du lot 01
 

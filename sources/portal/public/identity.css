@@ -1,0 +1,10 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+.editor-signature{position:fixed;right:0;bottom:0;z-index:45;padding:10px 20px;background:rgba(255,253,248,.97);color:#52615a;font:11px/1.5 system-ui,-apple-system,sans-serif;text-align:right;border-radius:8px 0 0 0;pointer-events:none}
+.editor-signature strong{font-weight:650}
+.client-logo{display:block;object-fit:contain;object-position:left center;width:auto;height:auto;max-width:158px;max-height:48px;border:0;border-radius:0;box-shadow:none}
+.company-name{font-weight:700;color:#1f2937;overflow-wrap:anywhere}
+.portal-shell{background:linear-gradient(135deg,#fff9ef,#f3faf4)}
+.portal-shell .brand{display:block}
+.portal-shell .brand-product{display:block;margin-top:12px}
+@media(max-width:959px){.portal-shell .bottom-nav{bottom:35px}.portal-shell .content{padding-bottom:150px}}
+@media(max-width:760px){.editor-signature{font-size:10px;padding:9px 13px}.client-logo{max-width:105px;max-height:36px}}

@@ -14,7 +14,13 @@ try {
     $config['company_id'] = $config['company_id'] ?? 1;
     $config['company_name'] = $config['company_name'] ?? (getenv('VIGILANCE_COMPANY') ?: 'Entreprise');
     $config['initial_admin'] = $config['initial_admin'] ?? (getenv('VIGILANCE_INITIAL_ADMIN') ?: null);
-    $settings = array_intersect_key($config,array_flip(['database_path','company_id','company_name','initial_admin','qsse_enabled']));
+    $brandingOrigin = getenv('VIGILANCE_BRANDING_ORIGIN');
+    if ($brandingOrigin !== false && $brandingOrigin !== '') {
+        $normalized = \Vigilance\Branding::normalizeOrigin($brandingOrigin);
+        if ($normalized === '') throw new RuntimeException('Origine de marque invalide.');
+        $config['branding_origin'] = $normalized;
+    }
+    $settings = array_intersect_key($config,array_flip(['database_path','company_id','company_name','initial_admin','qsse_enabled','branding_origin']));
     umask(0077);
     $write = static function(string $destination,array $values): void {
         $temporary = $destination.'.'.bin2hex(random_bytes(8));

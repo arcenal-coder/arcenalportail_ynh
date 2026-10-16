@@ -5,7 +5,7 @@ require_once __DIR__.'/../src/bootstrap.php';
 require_once __DIR__.'/../src/application.php';
 header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
-header("Content-Security-Policy: default-src 'none'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'");
+header("Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'");
 try {
     $context=vigilanceBootstrap();
     $config=$context['config'];$uid=$context['uid'];
@@ -76,13 +76,16 @@ $name=displayName($uid);$firstName=explode(' ',$name)[0];
 $states=['submitted'=>'Soumise','qualified'=>'Qualifiée','treatment'=>'En traitement','open'=>'Ouverte','in_progress'=>'En cours','closed'=>'Close','classified'=>'Classée avec motif'];
 $openActions=count(array_filter($data['actions']??[],fn($a)=>in_array($a['status']??'',['open','in_progress'],true)));
 $active=function(string $target)use($view):string{return $view===$target?' aria-current="page" class="active"':'';};
+$legacyCompany=(new \Vigilance\AdminService($context['db'],$context['access']))->company();
+$legacyBranding=(new \Vigilance\Branding($context['db']->directory.'/branding',(string)($config['branding_origin']??'')))->resolve();
+$legacyHasLogo=$legacyBranding['available']||$legacyCompany['logo']!=='';
 ?><!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#4f397c"><title>QSSE — VIGIlance</title><link rel="stylesheet" href="qsse.css"></head>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#fffdf8"><title>QSSE — VIGIlance</title><link rel="stylesheet" href="qsse.css"></head>
 <body><div class="portal-shell">
 <input class="nav-control" type="checkbox" id="nav-control" aria-hidden="true">
 <label class="nav-overlay" for="nav-control" aria-label="Fermer le menu"></label>
 <aside class="side-nav" aria-label="Navigation principale">
-    <a class="brand" href="?view=home"><span class="brand-mark">V</span><span><strong>VIGIlance</strong><small>Propulsé par ARCenal OS</small></span></a>
+    <a class="brand" href="?view=home"><?php if($legacyHasLogo):?><img class="client-logo" src="?view=logo" alt="Logo <?=esc($legacyCompany['name'])?>"><?php else:?><span class="company-name"><?=esc($legacyCompany['name'])?></span><?php endif;?><span class="brand-product"><strong>VIGIlance</strong></span></a>
     <nav>
         <p class="nav-label">Mon espace</p>
         <a href="?view=home"<?=$active('home')?>><span>⌂</span>Accueil équipier</a>
@@ -96,7 +99,7 @@ $active=function(string $target)use($view):string{return $view===$target?' aria-
     <div class="account"><span class="avatar"><?=esc(initials($uid))?></span><span><strong><?=esc($firstName)?></strong><small><?=esc($uid)?></small></span></div>
 </aside>
 <div class="portal-main">
-<header class="topbar"><label class="menu-button" for="nav-control" aria-label="Ouvrir le menu"><i></i><i></i><i></i></label><a class="mobile-brand" href="?view=home"><span class="brand-mark">V</span><strong>VIGIlance</strong></a><span class="top-identity"><?=esc($firstName)?></span></header>
+<header class="topbar"><label class="menu-button" for="nav-control" aria-label="Ouvrir le menu"><i></i><i></i><i></i></label><a class="mobile-brand" href="?view=home"><?php if($legacyHasLogo):?><img class="client-logo" src="?view=logo" alt="Logo <?=esc($legacyCompany['name'])?>"><?php endif;?><strong>VIGIlance</strong></a><span class="top-identity"><?=esc($firstName)?></span></header>
 <main class="content">
 <?php if($error):?><p class="alert error" role="alert"><?=esc($error)?></p><?php endif;?>
 <?php if($success):?><p class="alert success" role="status"><?=esc($success)?></p><?php endif;?>
@@ -133,4 +136,4 @@ $active=function(string $target)use($view):string{return $view===$target?' aria-
 <?php endif;?>
 </main>
 <nav class="bottom-nav" aria-label="Accès rapides"><a href="?view=home"<?=$active('home')?>><span>⌂</span>Accueil</a><a href="?view=mat"<?=$active('mat')?>><span>☀</span>MAT</a><a href="?view=report"<?=$active('report')?>><span>!</span>Remontée</a><a href="?view=actions"<?=$active('actions')?>><span>↗</span>PAO</a></nav>
-</div></div></body></html>
+</div></div><footer class="editor-signature">Propulsé par <strong>ARCenal OS</strong></footer></body></html>
