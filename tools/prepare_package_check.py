@@ -32,10 +32,11 @@ def prepare(directory):
     checked = '''    ret=$?
 
     if [ "$ret" -eq 0 ]; then
-        local installed_mode
-        installed_mode=$(LXC_EXEC "stat -c %a /var/www/$app_id") || ret=1
+        local installed_mode installed_mode_raw
+        installed_mode_raw=$(LXC_EXEC "stat -c %a /var/www/$app_id") || ret=1
+        installed_mode=${installed_mode_raw%$'\\r'}
         if [ "$ret" -eq 0 ]; then
-            jq --arg mode "$installed_mode" '. + {arc_post_upgrade_install_mode:$mode}' "$current_test_results" > "$current_test_results.mode"
+            jq --arg mode "$installed_mode" --arg raw "$installed_mode_raw" '. + {arc_post_upgrade_install_mode:$mode,arc_post_upgrade_install_mode_raw:$raw}' "$current_test_results" > "$current_test_results.mode"
             mv "$current_test_results.mode" "$current_test_results"
             [[ "$installed_mode" == "750" ]] || ret=1
         fi

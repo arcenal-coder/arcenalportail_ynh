@@ -1,6 +1,7 @@
 import copy
 import tempfile
 import unittest
+import subprocess
 from pathlib import Path
 from verify_package_report import qualify, REQUIRED
 from prepare_package_check import prepare
@@ -111,6 +112,14 @@ class QualificationTest(unittest.TestCase):
             self.assertIn('cp -a',script.read_text())
             self.assertIn('rm -rf "$TEST_CONTEXT"',script.read_text())
             self.assertIn('arc_post_upgrade_install_mode',tests.read_text())
+            # Incus emits a CR before the final newline. Test the exact rendered
+            # shell guard without a YunoHost container or external jq dependency.
+            guard=tests.read_text().split('\nTEST_PORT_ALREADY_USED()')[0]
+            result_path=Path(folder)/'result.json';result_path.write_text('{}')
+            shell='LXC_EXEC(){ printf "%s\\r" "$MODE"; }; jq(){ printf "{}"; }; metrics_stop(){ :; }; app_id=arcenalportail; current_test_results='+str(result_path)+'; check_mode(){\n'+guard+'\n'
+            for mode,expected in [('750',0),('755',1),('750x',1)]:
+                result=subprocess.run(['bash','-c',shell+'MODE='+mode+'; true; check_mode'])
+                self.assertEqual(result.returncode,expected)
 
 
 if __name__=='__main__':unittest.main()
