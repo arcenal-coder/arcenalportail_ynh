@@ -1,6 +1,7 @@
 #!/bin/bash
 
 vigilance_configure() {
+    chmod 750 "$install_dir"
     local php_runtime="${php_version:-${phpversion:-8.2}}"
     local branding_domain
     # The app subdomain may have no logo; use YunoHost's configured main domain.

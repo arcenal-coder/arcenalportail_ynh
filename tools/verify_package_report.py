@@ -68,9 +68,15 @@ def qualify(reports, linter, expected_commit, native_tests, engine):
     if not REQUIRED <= raw_coverage or len(native_tests) != len(tests):
         raise ValueError("Preuves détaillées natives manquantes.")
     adjusted = copy.deepcopy(native_tests)
+    legacy_findings = []
     for test in adjusted:
         result = test["results"]
-        if result.get("main_result") != "success" or any(result.get(flag) for flag in FLAGS):
+        legacy_mode_repaired = (test["test_type"] == "TEST_UPGRADE" and test.get("test_arg") in UPGRADES
+                                and str(result.get("arc_post_upgrade_install_mode")) == "750")
+        if result.get("install_dir_permissions") and legacy_mode_repaired:
+            legacy_findings.append({"upgrade_from": test["test_arg"], "initial_install_permissions": result["install_dir_permissions"], "verified_post_upgrade_mode": "750"})
+        rejected_flags = [flag for flag in FLAGS if not (flag == "install_dir_permissions" and legacy_mode_repaired)]
+        if result.get("main_result") != "success" or any(result.get(flag) for flag in rejected_flags):
             raise ValueError("Échec natif, perte de données, permissions ou sécurité non conforme.")
         if test["test_type"] == "TEST_PACKAGE_LINTER":
             removed = catalog_findings(result)
@@ -87,6 +93,7 @@ def qualify(reports, linter, expected_commit, native_tests, engine):
         "checker_revision": "f7d32cadac3cfced282decede024707fba9e6ec6",
         "native_engine_sha256": hashlib.sha256(engine.encode()).hexdigest(),
         "private_catalog_criteria": criteria, "official_catalog_only_findings": findings,
+        "legacy_baseline_findings": legacy_findings,
         "linter_warnings": linter.get("warning", []), "evidence": reports,
     }
 

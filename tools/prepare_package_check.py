@@ -24,6 +24,32 @@ def prepare(directory):
     if source.count(original) != 1:
         raise ValueError("Nettoyage amont non reconnu ; aucune qualification possible.")
     script.write_text(source.replace(original, preserve + original))
+    # Add a read-only post-upgrade security assertion. The original legacy
+    # install flags remain in the report and are not cleared or rewritten.
+    tests = Path(directory) / "lib/tests.sh"
+    source = tests.read_text()
+    original = '    ret=$?\n\n    metrics_stop\n\n    return $ret\n}\n\nTEST_PORT_ALREADY_USED()'
+    checked = '''    ret=$?
+
+    if [ "$ret" -eq 0 ]; then
+        local installed_mode
+        installed_mode=$(LXC_EXEC "stat -c %a /var/www/$app_id") || ret=1
+        if [ "$ret" -eq 0 ]; then
+            jq --arg mode "$installed_mode" '. + {arc_post_upgrade_install_mode:$mode}' "$current_test_results" > "$current_test_results.mode"
+            mv "$current_test_results.mode" "$current_test_results"
+            [[ "$installed_mode" == "750" ]] || ret=1
+        fi
+    fi
+
+    metrics_stop
+
+    return $ret
+}
+
+TEST_PORT_ALREADY_USED()'''
+    if source.count(original) != 1:
+        raise ValueError("Contrôle d'upgrade amont non reconnu ; aucun test supprimé.")
+    tests.write_text(source.replace(original, checked))
 
 
 if __name__ == "__main__":

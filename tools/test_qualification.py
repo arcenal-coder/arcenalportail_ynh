@@ -80,6 +80,20 @@ class QualificationTest(unittest.TestCase):
         self.native[1]['results']['witness']=True
         with self.assertRaises(ValueError):self.run_qualification()
 
+    def test_legacy_permissions_need_proven_post_upgrade_repair(self):
+        historical=next(t for t in self.native if t['test_type']=='TEST_UPGRADE' and t['test_arg'])
+        historical['results']['install_dir_permissions']='failure'
+        with self.assertRaises(ValueError): self.run_qualification()
+        historical['results']['arc_post_upgrade_install_mode']='750'
+        self.assertEqual(self.run_qualification()['arcenal_technical_level'],5)
+        self.assertEqual(historical['results']['install_dir_permissions'],'failure')
+
+    def test_current_unsafe_permissions_can_never_be_excused(self):
+        current=next(t for t in self.native if t['test_type']=='TEST_UPGRADE' and not t['test_arg'])
+        current['results']['install_dir_permissions']='failure'
+        current['results']['arc_post_upgrade_install_mode']='750'
+        with self.assertRaises(ValueError): self.run_qualification()
+
     def test_unknown_grading_engine_rejected(self):
         with self.assertRaises(ValueError):qualify(self.reports,self.linter,self.commit,self.native,'different upstream')
 
@@ -89,11 +103,14 @@ class QualificationTest(unittest.TestCase):
             common.write_text("    ping -q -c 2 yunohost.org > /dev/null 2>&1 \\\n    || return 1\nNATIVE_TESTS\n")
             script=Path(folder)/'package_check.sh'
             script.write_text('    [ -n "$TEST_CONTEXT" ] && rm -rf "$TEST_CONTEXT"\n')
+            tests=common.parent/'tests.sh'
+            tests.write_text('    ret=$?\n\n    metrics_stop\n\n    return $ret\n}\n\nTEST_PORT_ALREADY_USED()')
             prepare(folder)
             self.assertIn('NATIVE_TESTS',common.read_text())
             self.assertIn('|| ping',common.read_text())
             self.assertIn('cp -a',script.read_text())
             self.assertIn('rm -rf "$TEST_CONTEXT"',script.read_text())
+            self.assertIn('arc_post_upgrade_install_mode',tests.read_text())
 
 
 if __name__=='__main__':unittest.main()
