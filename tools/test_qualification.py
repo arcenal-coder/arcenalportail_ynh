@@ -5,6 +5,8 @@ import subprocess
 from pathlib import Path
 from verify_package_report import qualify, REQUIRED, LEGACY_UPGRADES, MAIL_CRITERIA
 from prepare_package_check import prepare
+from native_mail_check import safe_local_message
+from email.message import EmailMessage
 
 # Pure fixture functions representing native criteria; real CI loads the pinned engine.
 ENGINE = '''
@@ -53,6 +55,18 @@ class QualificationTest(unittest.TestCase):
         for field in MAIL_CRITERIA:
             upgrade['results']['arc_mail_transport']=dict(proof,**{field:False})
             with self.assertRaises(ValueError):self.run_qualification()
+
+    def test_native_mail_decodes_dovecot_text_and_private_body(self):
+        message = EmailMessage()
+        message['From']='app@example.invalid'
+        message['To']='recipient@example.invalid'
+        url='https://app.example.invalid/'
+        message.set_content('Ouvrir VIGIlance : '+url, cte='base64')
+        for separator in [' ', '\n']:
+            raw='hdr.from: app@example.invalid\ntext:'+separator+message.as_string()
+            self.assertTrue(safe_local_message(raw,'app@example.invalid','recipient@example.invalid',url))
+        message.set_content('NATIVE_PRIVATE_BODY '+url, cte='base64')
+        self.assertFalse(safe_local_message('text:\n'+message.as_string(),'app@example.invalid','recipient@example.invalid',url))
 
     def test_failed_scenario_rejected(self):
         self.native[1]['results']['main_result']='failure'

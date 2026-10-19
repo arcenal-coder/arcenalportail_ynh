@@ -9,6 +9,7 @@ import time
 from email import policy
 from email.parser import Parser
 from email.utils import getaddresses
+from contextlib import contextmanager
 
 
 def run(*args, timeout=45):
@@ -16,6 +17,31 @@ def run(*args, timeout=45):
     if result.returncode:
         raise RuntimeError("Native mail command failed")
     return result.stdout.strip()
+
+
+def safe_local_message(content, sender, recipient, url):
+    raw = re.split(r'(?:^|\n)text: ?', content, maxsplit=1)
+    if len(raw) != 2:
+        return False
+    message = Parser(policy=policy.default).parsestr(raw[1].lstrip('\r\n'))
+    body = message.get_content()
+    return (getaddresses(message.get_all('From', [])) == [('', sender)]
+            and getaddresses(message.get_all('To', [])) == [('', recipient)]
+            and isinstance(body, str) and url in body
+            and 'NATIVE_INTERNAL_ONLY' not in body and 'NATIVE_PRIVATE_BODY' not in body)
+
+
+@contextmanager
+def manual_worker_only():
+    # Test container only: avoid racing a minute-boundary cron invocation.
+    active = subprocess.run(['systemctl', 'is-active', '--quiet', 'cron'], capture_output=True).returncode == 0
+    if active:
+        run('systemctl', 'stop', 'cron')
+    try:
+        yield
+    finally:
+        if active:
+            run('systemctl', 'start', 'cron')
 
 
 def check(app):
@@ -85,14 +111,7 @@ echo json_encode(['id'=>$id,'company'=>(int)$c['company_id'],'url'=>$c['public_u
         if not delivered:
             raise ValueError("Local mailbox did not receive message")
         content = run("doveadm", "fetch", "-u", "package_checker", "hdr.from hdr.to text", "header", "Message-ID", "<" + message_id + ">")
-        raw = re.split(r'(?:^|\n)text: ?', content, maxsplit=1)
-        if len(raw) != 2:
-            raise ValueError('Local message not readable')
-        message = Parser(policy=policy.default).parsestr(raw[1])
-        body = message.get_content()
-        if (getaddresses(message.get_all('From',[])) != [('', identity['from'])]
-                or getaddresses(message.get_all('To',[])) != [('', recipient)]
-                or identity['url'] not in body or 'NATIVE_INTERNAL_ONLY' in body or 'NATIVE_PRIVATE_BODY' in body):
+        if not safe_local_message(content, identity['from'], recipient, identity['url']):
             raise ValueError("Unexpected message headers or private content")
         # The second actual invocation must not resubmit a sent event.
         repeated = json.loads(run(*prefix, php, install + "/bin/send-journey-mail.php"))
@@ -107,7 +126,8 @@ echo json_encode(['id'=>$id,'company'=>(int)$c['company_id'],'url'=>$c['public_u
 
 if __name__ == "__main__":
     try:
-        print(json.dumps(check(sys.argv[1])))
+        with manual_worker_only():
+            print(json.dumps(check(sys.argv[1])))
     except (ValueError, RuntimeError) as error:
         raise SystemExit('VIGIlance native local-mail check failed: ' + str(error)) from None
     except Exception:
