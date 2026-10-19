@@ -12,8 +12,11 @@ def prepare(path):
     if 'only' in config['default'] or 'exclude' in config['default']:
         raise ValueError('Unexpected existing test restriction')
     text = re.sub(r'^test_upgrade_from\..*\n', '', text, flags=re.M)
-    text = text.replace('[default]\n', '[default]\nonly = ["TEST_UPGRADE"]\n', 1)
-    assert tomllib.loads(text)['default']['only'] == ['TEST_UPGRADE']
+    # The pinned parser forbids "only" on default and uses "upgrade" aliases.
+    text = text.replace('[default]', '[mail_diagnostic]', 1).replace('[default.', '[mail_diagnostic.')
+    text = text.replace('[mail_diagnostic]\n', '[mail_diagnostic]\nonly = ["upgrade"]\n', 1)
+    text += '\n[default]\nexclude = ["package_linter", "install.root", "install.subdir", "install.nourl", "install.multi", "backup_restore", "upgrade", "change_url"]\n'
+    assert tomllib.loads(text)['mail_diagnostic']['only'] == ['upgrade']
     path.write_text(text)
 
 

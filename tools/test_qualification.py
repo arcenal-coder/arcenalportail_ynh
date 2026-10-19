@@ -76,8 +76,11 @@ class QualificationTest(unittest.TestCase):
             original='test_format = 1.0\n[default]\nargs.initial_admin = "package_checker"\ntest_upgrade_from.abc.name = "Previous"\n'
             path.write_text(original)
             prepare_diagnostic(path)
-            config=tomllib.loads(path.read_text())['default']
-            self.assertEqual(config['only'],['TEST_UPGRADE'])
+            suites=tomllib.loads(path.read_text())
+            config=suites['mail_diagnostic']
+            self.assertNotIn('only',suites['default'])
+            self.assertIn('upgrade',suites['default']['exclude'])
+            self.assertEqual(config['only'],['upgrade'])
             self.assertNotIn('test_upgrade_from',config)
             self.assertEqual(config['args']['initial_admin'],'package_checker')
             self.assertIn(('TEST_INSTALL','root'),REQUIRED)
