@@ -6,6 +6,7 @@ final class Database
 {
     public \PDO $pdo;
     public string $directory;
+    private bool $transactionActive = false;
 
     public function __construct(string $path)
     {
@@ -35,7 +36,9 @@ final class Database
 
     public function transaction(callable $operation)
     {
+        if ($this->transactionActive) throw new \LogicException('Transaction imbriquée non autorisée.');
         $this->pdo->exec('BEGIN IMMEDIATE');
+        $this->transactionActive = true;
         try {
             $result = $operation();
             $this->pdo->exec('COMMIT');
@@ -43,7 +46,15 @@ final class Database
         } catch (\Throwable $error) {
             $this->pdo->exec('ROLLBACK');
             throw $error;
+        } finally {
+            $this->transactionActive = false;
         }
+    }
+
+    public function inTransaction(): bool
+    {
+        // PHP 8.2 PDO SQLite does not track transactions opened with exec().
+        return $this->transactionActive || $this->pdo->inTransaction();
     }
 
     public function migrate(): void

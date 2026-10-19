@@ -49,7 +49,7 @@ final class JourneyMail
     /** All worker instances serialize on a private lock, never during a web request. */
     public function dispatch(array $config, ?callable $transport=null, ?int $now=null): array
     {
-        if ($this->db->pdo->inTransaction()) throw new \LogicException('L’envoi e-mail doit rester hors transaction métier.');
+        if ($this->db->inTransaction()) throw new \LogicException('L’envoi e-mail doit rester hors transaction métier.');
         $counts=['sent'=>0,'retry'=>0,'cancelled'=>0,'failed'=>0,'waiting'=>0,'busy'=>false,'configured'=>false];
         $from=(string)($config['mail_from']??'');
         $url=(string)($config['public_url']??'');

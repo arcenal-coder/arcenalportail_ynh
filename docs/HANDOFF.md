@@ -2,6 +2,8 @@
 
 ## E-mails des workflows — beta5
 
+Correction de compatibilité : source 820333d, suivi explicite des transactions BEGIN IMMEDIATE (PDO PHP 8.2 ne les signale pas via inTransaction). 51 assertions e-mail incluant simulation du comportement PDO ancien,103 parcours,59 services,34 HTTP,26 lifecycle doublé réussis ; nouvelle qualification exacte requise. L'exécution source initiale 39314871788 a révélé ce défaut et n'est pas une preuve de succès.
+
 Source 359ab24ea28b38c916af4705eadfcffdec717373, candidate 1.1.0-beta5~ynh1, branche preview. Six transitions raccordées, file persistante, paramètres des adresses et suivi/relance Administration. Voir VIGILANCE_WORKFLOW_EMAILS.md. Migration003 additive, sauvegarde de la file/cron, aucune donnée personnelle importée. Contrôles locaux : 48 mail,103 parcours,59 services,43 branding,34 HTTP,28 outils,26 lifecycle doublé ; revue indépendante favorable après correction d'équité de file. Qualification native du commit exact à exécuter avant promotion ciblée ; preuve MTA locale exigée après chaque upgrade dont beta4 ynh2. Le contrôle vérifie le cron rendu mais déclenche manuellement le worker ; passage effectif du cron et réception cliente restent distincts. Aucun déploiement client.
 
 ## Correctif du 19 octobre 2026 — beta4 ynh2
