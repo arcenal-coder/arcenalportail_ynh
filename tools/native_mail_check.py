@@ -17,6 +17,8 @@ STAGE = 'start'
 def run(*args, timeout=45):
     global STAGE
     STAGE = 'command_' + args[0]
+    if args[:2] == ('systemctl', 'start') and len(args) == 3:
+        STAGE = 'start_' + args[2]
     result = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
     if result.returncode:
         raise RuntimeError("Native mail command failed")
@@ -57,7 +59,7 @@ def queue_diagnostics(text):
 def delivery_diagnostics():
     from pathlib import Path
     states={service:subprocess.run(['systemctl','is-active','--quiet',service],capture_output=True).returncode==0
-            for service in ['postfix','postfix@-','dovecot','rspamd']}
+            for service in ['postfix','postfix@-','dovecot','postsrsd']}
     try:
         queued=queue_diagnostics(run('postqueue','-j'))
     except Exception:
@@ -164,9 +166,10 @@ echo json_encode(['id'=>$id,'company'=>(int)$c['company_id'],'url'=>$c['public_u
         raise ValueError("Sender is not provisioned for the application")
     # No external SMTP egress during the check, even on a misconfigured fixture.
     with blocked_smtp_egress():
-        # The app-CI image leaves the antispam service stopped; provision the
-        # existing full local mail stack before testing actual delivery.
-        run("systemctl", "start", "redis-server", "rspamd", "postfix", "dovecot")
+        # appci disables PostSRSd/Dovecot. YunoHost 12 Postfix cleanup needs
+        # its canonical TCP maps on 10001/10002; Rspamd/Redis are not mandatory.
+        for service in ['postsrsd', 'dovecot', 'postfix']:
+            run('systemctl', 'start', service)
         run('postfix', 'status')
         accepted = json.loads(run(*prefix, php, install + "/bin/send-journey-mail.php"))
         if accepted["sent"] != 1 or accepted["retry"] or accepted["failed"]:
