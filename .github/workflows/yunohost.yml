@@ -1,6 +1,11 @@
 name: Qualify YunoHost package
 on:
   workflow_dispatch:
+    inputs:
+      diagnostic_mail:
+        description: Single-upgrade mail diagnostic only (never qualifies a release)
+        type: boolean
+        default: false
   push:
     branches: [preview]
     paths:
@@ -52,14 +57,19 @@ jobs:
           python3 -m venv --system-site-packages /tmp/package-check-env
           /tmp/package-check-env/bin/pip install imgkit
           python3 tools/prepare_package_check.py /tmp/package_check
+          if [[ "${{ inputs.diagnostic_mail }}" == "true" ]]; then
+            python3 tools/prepare_mail_diagnostic.py tests.toml
+          fi
           python3 /tmp/package_check/lib/parse_tests_toml.py "$GITHUB_WORKSPACE" > /tmp/package_plan.json
           sudo env PATH="/tmp/package-check-env/bin:$PATH" YNHDEV_BACKEND=incus DIST=bookworm YNH_BRANCH=stable /tmp/package_check/package_check.sh "$GITHUB_WORKSPACE"
           sudo chown -R "$USER:$USER" /tmp/package_check
           python3 /tmp/package_check/package_linter/package_linter.py "$GITHUB_WORKSPACE" --json > /tmp/linter_report.json
-          python3 tools/verify_package_report.py /tmp/package_check \
-            --linter-report /tmp/linter_report.json \
-            --expected-commit "$GITHUB_SHA" \
-            --qualification-output /tmp/arcenal-qualification.json
+          if [[ "${{ inputs.diagnostic_mail }}" != "true" ]]; then
+            python3 tools/verify_package_report.py /tmp/package_check \
+              --linter-report /tmp/linter_report.json \
+              --expected-commit "$GITHUB_SHA" \
+              --qualification-output /tmp/arcenal-qualification.json
+          fi
       - name: Make evidence readable
         if: always()
         run: sudo chown -R "$USER:$USER" /tmp/package_check || true
@@ -67,7 +77,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: yunohost-qualification
+          name: ${{ inputs.diagnostic_mail && 'yunohost-mail-diagnostic' || 'yunohost-qualification' }}
           path: |
             /tmp/package_check/results_*.json
             /tmp/package_check/full_log_*.log

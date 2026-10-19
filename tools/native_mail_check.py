@@ -11,8 +11,12 @@ from email.parser import Parser
 from email.utils import getaddresses
 from contextlib import contextmanager
 
+STAGE = 'start'
+
 
 def run(*args, timeout=45):
+    global STAGE
+    STAGE = 'command_' + args[0]
     result = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
     if result.returncode:
         raise RuntimeError("Native mail command failed")
@@ -33,18 +37,26 @@ def safe_local_message(content, sender, recipient, url):
 
 @contextmanager
 def manual_worker_only():
+    global STAGE
     # Test container only: avoid racing a minute-boundary cron invocation.
     active = subprocess.run(['systemctl', 'is-active', '--quiet', 'cron'], capture_output=True).returncode == 0
     if active:
         run('systemctl', 'stop', 'cron')
+    failed_stage = None
     try:
         yield
+    except Exception:
+        failed_stage = STAGE
+        raise
     finally:
         if active:
             run('systemctl', 'start', 'cron')
+        if failed_stage is not None:
+            STAGE = failed_stage
 
 
 def check(app):
+    global STAGE
     if not re.fullmatch(r"arcenalportail(?:__[0-9]+)?", app):
         raise ValueError("Unexpected app")
     install = run("yunohost", "app", "setting", app, "install_dir")
@@ -53,12 +65,14 @@ def check(app):
         raise ValueError("Unexpected installation path")
     # Existing package-check account only; its primary mailbox is provisioned locally.
     user = json.loads(run("yunohost", "user", "info", "package_checker", "--output-as", "json"))
+    STAGE = 'local_recipient'
     recipient = user["mail"]
     domains = json.loads(run("yunohost", "domain", "list", "--output-as", "json"))["domains"]
     if not isinstance(recipient, str) or recipient.rsplit("@", 1)[-1] not in domains:
         raise ValueError("Recipient must be a local YunoHost mailbox")
     from pathlib import Path
     cron = Path("/etc/cron.d/" + app + "-journey-mail")
+    STAGE = 'cron_file'
     cron_text = cron.read_text()
     if "__" in cron_text.replace(app, "") or f" {app} /usr/bin/env " not in cron_text:
         raise ValueError("Cron not rendered with application identity")
@@ -87,6 +101,7 @@ echo json_encode(['id'=>$id,'company'=>(int)$c['company_id'],'url'=>$c['public_u
     identity = json.loads(run(*prefix, "VIGILANCE_TEST_INSTALL=" + install, "VIGILANCE_TEST_MAIL_TO=" + recipient, php, "-r", php_code))
     if identity["from"] != app + "@" + domain:
         raise ValueError("Sender mismatches system-user resource default")
+    STAGE = 'sender_map'
     sender_map = Path("/etc/postfix/app_senders_login_maps").read_text()
     if not any(line.split() == [identity["from"], app] for line in sender_map.splitlines()):
         raise ValueError("Sender is not provisioned for the application")
@@ -130,6 +145,6 @@ if __name__ == "__main__":
             print(json.dumps(check(sys.argv[1])))
     except (ValueError, RuntimeError) as error:
         raise SystemExit('VIGIlance native local-mail check failed: ' + str(error)) from None
-    except Exception:
+    except Exception as error:
         # Command output can contain addresses or server details: never print it.
-        raise SystemExit("VIGIlance native local-mail check failed") from None
+        raise SystemExit('VIGIlance native local-mail check failed: stage=' + STAGE + ' exception=' + type(error).__name__) from None

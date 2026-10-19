@@ -7,6 +7,8 @@ from verify_package_report import qualify, REQUIRED, LEGACY_UPGRADES, MAIL_CRITE
 from prepare_package_check import prepare
 from native_mail_check import safe_local_message
 from email.message import EmailMessage
+from prepare_mail_diagnostic import prepare as prepare_diagnostic
+import tomllib
 
 # Pure fixture functions representing native criteria; real CI loads the pinned engine.
 ENGINE = '''
@@ -67,6 +69,18 @@ class QualificationTest(unittest.TestCase):
             self.assertTrue(safe_local_message(raw,'app@example.invalid','recipient@example.invalid',url))
         message.set_content('NATIVE_PRIVATE_BODY '+url, cte='base64')
         self.assertFalse(safe_local_message('text:\n'+message.as_string(),'app@example.invalid','recipient@example.invalid',url))
+
+    def test_diagnostic_plan_is_explicitly_restricted_and_cannot_qualify(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'tests.toml'
+            original='test_format = 1.0\n[default]\nargs.initial_admin = "package_checker"\ntest_upgrade_from.abc.name = "Previous"\n'
+            path.write_text(original)
+            prepare_diagnostic(path)
+            config=tomllib.loads(path.read_text())['default']
+            self.assertEqual(config['only'],['TEST_UPGRADE'])
+            self.assertNotIn('test_upgrade_from',config)
+            self.assertEqual(config['args']['initial_admin'],'package_checker')
+            self.assertIn(('TEST_INSTALL','root'),REQUIRED)
 
     def test_failed_scenario_rejected(self):
         self.native[1]['results']['main_result']='failure'
