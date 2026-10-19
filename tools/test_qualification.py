@@ -3,7 +3,7 @@ import tempfile
 import unittest
 import subprocess
 from pathlib import Path
-from verify_package_report import qualify, REQUIRED, LEGACY_UPGRADES
+from verify_package_report import qualify, REQUIRED, LEGACY_UPGRADES, MAIL_CRITERIA
 from prepare_package_check import prepare
 
 # Pure fixture functions representing native criteria; real CI loads the pinned engine.
@@ -26,6 +26,8 @@ class QualificationTest(unittest.TestCase):
                        'critical':{'AppCatalog.is_in_catalog':'private catalog'},'warning':[]}
         self.native = [dict(test,results={'main_result':'success','critical':[],'error':[]}) for test in tests]
         for test in self.native:
+            if test['test_type']=='TEST_UPGRADE':
+                test['results']['arc_mail_transport']=dict(schema='vigilance-native-mail/v1',**{key:True for key in MAIL_CRITERIA})
             if test['test_type']=='TEST_PACKAGE_LINTER':
                 test['results']['critical']=list(self.linter['critical'])
                 test['results']['error']=list(self.linter['error'])
@@ -43,6 +45,14 @@ class QualificationTest(unittest.TestCase):
     def test_missing_reports_rejected(self):
         self.reports=[]
         with self.assertRaises(ValueError):self.run_qualification()
+
+    def test_native_mail_proof_required(self):
+        upgrade=next(t for t in self.native if t['test_type']=='TEST_UPGRADE')
+        proof=upgrade['results'].pop('arc_mail_transport')
+        with self.assertRaises(ValueError):self.run_qualification()
+        for field in MAIL_CRITERIA:
+            upgrade['results']['arc_mail_transport']=dict(proof,**{field:False})
+            with self.assertRaises(ValueError):self.run_qualification()
 
     def test_failed_scenario_rejected(self):
         self.native[1]['results']['main_result']='failure'
@@ -134,7 +144,7 @@ class QualificationTest(unittest.TestCase):
             # shell guard without a YunoHost container or external jq dependency.
             guard=tests.read_text().split('\nTEST_PORT_ALREADY_USED()')[0]
             result_path=Path(folder)/'result.json';result_path.write_text('{}')
-            shell='LXC_EXEC(){ printf "%s\\r" "$MODE"; }; jq(){ printf "{}"; }; metrics_stop(){ :; }; app_id=arcenalportail; current_test_results='+str(result_path)+'; check_mode(){\n'+guard+'\n'
+            shell='LXC_EXEC(){ if [[ "$1" == stat* ]]; then printf "%s\\r" "$MODE"; else printf "{}"; fi; }; jq(){ printf "{}"; }; metrics_stop(){ :; }; app_id=arcenalportail; current_test_results='+str(result_path)+'; check_mode(){\n'+guard+'\n'
             for mode,expected in [('750',0),('755',1),('750x',1)]:
                 result=subprocess.run(['bash','-c',shell+'MODE='+mode+'; true; check_mode'])
                 self.assertEqual(result.returncode,expected)

@@ -18,6 +18,7 @@ chown "$app:$app" "$install_dir/config.php"
 chown "$app:$app" "$install_dir/application-settings.php"
 ynh_exec_as_app env ARCENAL_PORTAL_CONFIG="$install_dir/config.php" \
     php"$php_runtime" "$install_dir/bin/manage.php" restore "$install_dir/.backup/vigilance.sqlite"
+ynh_restore "/etc/cron.d/$app-journey-mail"
 rm -f "$install_dir/.maintenance"
 ynh_systemctl --service="php$php_runtime-fpm" --action=reload
 ynh_systemctl --service=nginx --action=reload

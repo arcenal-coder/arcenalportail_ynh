@@ -53,10 +53,11 @@ final class AdminService
         return $this->db->rows('SELECT uid,roles FROM account WHERE company_id=? AND enabled=1 ORDER BY uid', [$this->access->company]);
     }
 
-    public function updateAccount(string $uid, int $revision, array $roles, array $teams, bool $enabled, bool $directory): void
+    public function updateAccount(string $uid, int $revision, array $roles, array $teams, bool $enabled, bool $directory, ?string $notificationEmail = null): void
     {
-        $this->db->transaction(function () use ($uid,$revision,$roles,$teams,$enabled,$directory): void {
+        $this->db->transaction(function () use ($uid,$revision,$roles,$teams,$enabled,$directory,$notificationEmail): void {
             $this->access->require('admin');
+            if ($notificationEmail !== null && $notificationEmail !== '' && !JourneyMail::validAddress($notificationEmail)) throw new \InvalidArgumentException('Adresse e-mail de notification invalide.');
             Identity::validate($uid);
             foreach ($roles as $role) if (!is_string($role)) throw new \InvalidArgumentException('Rôles invalides.');
             if (!array_is_list($roles) || array_diff($roles, Access::ROLES) || count($roles) !== count(array_unique($roles))) throw new \InvalidArgumentException('Rôles invalides.');
@@ -69,7 +70,7 @@ final class AdminService
                 $others = $this->db->rows('SELECT roles FROM account WHERE company_id=? AND enabled=1 AND uid<>?', [$this->access->company,$uid]);
                 if (!array_filter($others, static fn($row) => in_array('admin',json_decode($row['roles'],true),true))) throw new \DomainException('Conservez au moins un administrateur actif.');
             }
-            $this->db->execute('UPDATE account SET roles=?,teams=?,enabled=?,directory=?,revision=revision+1 WHERE company_id=? AND uid=? AND revision=?', [json_encode($roles,JSON_THROW_ON_ERROR),json_encode(array_values(array_unique($teams)),JSON_THROW_ON_ERROR),(int)$enabled,(int)$directory,$this->access->company,$uid,$revision]);
+            $this->db->execute('UPDATE account SET roles=?,teams=?,enabled=?,directory=?,notification_email=COALESCE(?,notification_email),revision=revision+1 WHERE company_id=? AND uid=? AND revision=?', [json_encode($roles,JSON_THROW_ON_ERROR),json_encode(array_values(array_unique($teams)),JSON_THROW_ON_ERROR),(int)$enabled,(int)$directory,$notificationEmail,$this->access->company,$uid,$revision]);
             $this->db->audit($this->access->company,$this->access->uid,'account.update',$uid,$revision+1);
         });
     }

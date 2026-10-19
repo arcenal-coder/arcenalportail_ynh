@@ -1,0 +1,2 @@
+MAILTO=""
+*/5 * * * * __APP__ /usr/bin/env ARCENAL_PORTAL_CONFIG="__INSTALL_DIR__/config.php" /usr/bin/php__PHP_RUNTIME__ "__INSTALL_DIR__/bin/send-journey-mail.php" >/dev/null

@@ -1,5 +1,7 @@
 # Décisions
 
+- 19 octobre 2026 — beta5 : file transactionnelle et migration003 pour les six événements e-mail candidature/accueil validés. Adresses administrées par Administration ; expéditeur app@domaine-applicatif aligné sur system_user.allow_email, actualisé par change_url. Worker non privilégié, MTA local, cron sauvegardé/restauré. Qualification native exigée depuis beta4 ynh2 avec preuve MTA/Dovecot dans le conteneur isolé. Aucune garantie exactement une fois après crash/restauration ; aucun contenu RH dans les messages.
+
 - 19 octobre 2026 — ynh2 porte la vidéo à 1 Gio, PHP à 1024M et l’enveloppe POST/nginx à 1028M, sans augmenter la mémoire PHP. Délais finis pour traitement/copie. PDF et QR inchangés. Les échecs de cache logo sont signalés, aucune priorité de source changée. Qualification native exigée depuis beta4 publiée sans exception de permissions historiques pour cette version.
 
 - 19 octobre 2026 — beta4 reprend les parcours de la démonstration avec stockage réel. L’état initial est vide ; médias et quiz se configurent dans l’Administration. Le refus d’un FORM S 13 notifie la Direction et ne fait pas passer Équipier ; une nouvelle proposition doit être acceptée.

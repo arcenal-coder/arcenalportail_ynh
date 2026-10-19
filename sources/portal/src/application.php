@@ -59,7 +59,12 @@ function vigilanceApplication(array $context, string $view): void
             } elseif ($action === 'account') {
                 if (!is_array($_POST['roles'] ?? [])) throw new InvalidArgumentException('Rôles invalides.');
                 $teams = array_values(array_filter(array_map('trim',explode(',',(string)($_POST['teams'] ?? ''))),static fn($team) => $team !== ''));
-                $admin->updateAccount((string)($_POST['uid'] ?? ''),(int)($_POST['revision'] ?? 0),$_POST['roles'] ?? [],$teams,isset($_POST['enabled']),isset($_POST['directory']));
+                $mail = $_POST['notification_email'] ?? null;
+                if ($mail !== null && !is_string($mail)) throw new InvalidArgumentException('Adresse e-mail invalide.');
+                $admin->updateAccount((string)($_POST['uid'] ?? ''),(int)($_POST['revision'] ?? 0),$_POST['roles'] ?? [],$teams,isset($_POST['enabled']),isset($_POST['directory']),$mail);
+                $destination = '?view=settings';
+            } elseif ($action === 'mail-retry') {
+                (new \Vigilance\JourneyMail($db))->retryFailed($access);
                 $destination = '?view=settings';
             } elseif ($action === 'logo') {
                 $access->require('admin');
@@ -103,6 +108,7 @@ function vigilanceApplication(array $context, string $view): void
     } elseif ($view === 'settings') {
         $access->require('admin');
         $accounts = $admin->accounts();
+        $mailStatus = (new \Vigilance\JourneyMail($db))->status($access);
     } elseif ($view !== 'home') throw new DomainException('Écran non disponible.');
     $choices = $isRh && in_array($view,['new','person'],true) ? $admin->accountChoices() : [];
     $indicators = $isDirection ? $admin->indicators() : [];

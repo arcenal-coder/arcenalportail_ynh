@@ -7,11 +7,12 @@ import json
 from pathlib import Path
 
 LEGACY_UPGRADES = {"0740d8a789772d6b061776945d69af33b1159d9b", "3ba0494cdd1191b262593601814f54141e67ad30"}
-UPGRADES = LEGACY_UPGRADES | {"39eaa3c66676a53ebbf99bab497a879e5d556f73", "cc0af029bb944761600bd960ae73eca2b6060ea6"}
+UPGRADES = LEGACY_UPGRADES | {"39eaa3c66676a53ebbf99bab497a879e5d556f73", "cc0af029bb944761600bd960ae73eca2b6060ea6", "6af4b824abab2f52862406d4fa5c2155b439386a"}
 REQUIRED = {("TEST_PACKAGE_LINTER", ""), ("TEST_INSTALL", "root"), ("TEST_INSTALL", "subdir"),
             ("TEST_INSTALL", "multi"), ("TEST_BACKUP_RESTORE", ""), ("TEST_UPGRADE", ""),
             ("TEST_CHANGE_URL", "")} | {("TEST_UPGRADE", commit) for commit in UPGRADES}
 FLAGS = ("witness", "alias_traversal", "install_dir_permissions", "file_manually_modified", "too_many_warnings")
+MAIL_CRITERIA = ("cron", "sender", "mta_accepted", "delivered_local", "private_content", "no_resend")
 
 
 def catalog_findings(linter):
@@ -72,6 +73,10 @@ def qualify(reports, linter, expected_commit, native_tests, engine):
     legacy_findings = []
     for test in adjusted:
         result = test["results"]
+        if test['test_type'] == 'TEST_UPGRADE':
+            mail = result.get('arc_mail_transport', {})
+            if mail.get('schema') != 'vigilance-native-mail/v1' or any(mail.get(key) is not True for key in MAIL_CRITERIA):
+                raise ValueError('Preuve de transport e-mail local manquante ou en échec après upgrade.')
         legacy_mode_repaired = (test["test_type"] == "TEST_UPGRADE" and test.get("test_arg") in LEGACY_UPGRADES
                                 and str(result.get("arc_post_upgrade_install_mode")) == "750")
         if result.get("install_dir_permissions") and legacy_mode_repaired:
@@ -95,6 +100,7 @@ def qualify(reports, linter, expected_commit, native_tests, engine):
         "native_engine_sha256": hashlib.sha256(engine.encode()).hexdigest(),
         "private_catalog_criteria": criteria, "official_catalog_only_findings": findings,
         "legacy_baseline_findings": legacy_findings,
+        "native_mail_verified": True,
         "linter_warnings": linter.get("warning", []), "evidence": reports,
     }
 

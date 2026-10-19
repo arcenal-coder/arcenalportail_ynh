@@ -14,7 +14,8 @@ set -x
 test_upgrade_from.0740d8a789772d6b061776945d69af33b1159d9b.name = "Depuis beta1 publiée"
 test_upgrade_from.3ba0494cdd1191b262593601814f54141e67ad30.name = "Depuis beta2 publiée"
 test_upgrade_from.39eaa3c66676a53ebbf99bab497a879e5d556f73.name = "Depuis beta3 publiée"
-test_upgrade_from.cc0af029bb944761600bd960ae73eca2b6060ea6.name = "Depuis beta4 ynh1 actuellement publiée"
+test_upgrade_from.cc0af029bb944761600bd960ae73eca2b6060ea6.name = "Depuis beta4 ynh1 publiée"
+test_upgrade_from.6af4b824abab2f52862406d4fa5c2155b439386a.name = "Depuis beta4 ynh2 actuellement publiée"
 
 [default.curl_tests]
 home.logged_on_sso = true

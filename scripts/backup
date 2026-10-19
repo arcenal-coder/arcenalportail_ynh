@@ -13,3 +13,4 @@ ynh_backup "$data_dir/logos"
 if test -d "$data_dir/welcome"; then ynh_backup "$data_dir/welcome"; fi
 ynh_backup "/etc/nginx/conf.d/$domain.d/$app.conf"
 ynh_backup "/etc/php/$php_runtime/fpm/pool.d/$app.conf"
+ynh_backup "/etc/cron.d/$app-journey-mail"

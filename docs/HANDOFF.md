@@ -1,5 +1,9 @@
 # Passage de relais
 
+## E-mails des workflows — beta5
+
+Source 359ab24ea28b38c916af4705eadfcffdec717373, candidate 1.1.0-beta5~ynh1, branche preview. Six transitions raccordées, file persistante, paramètres des adresses et suivi/relance Administration. Voir VIGILANCE_WORKFLOW_EMAILS.md. Migration003 additive, sauvegarde de la file/cron, aucune donnée personnelle importée. Contrôles locaux : 48 mail,103 parcours,59 services,43 branding,34 HTTP,28 outils,26 lifecycle doublé ; revue indépendante favorable après correction d'équité de file. Qualification native du commit exact à exécuter avant promotion ciblée ; preuve MTA locale exigée après chaque upgrade dont beta4 ynh2. Le contrôle vérifie le cron rendu mais déclenche manuellement le worker ; passage effectif du cron et réception cliente restent distincts. Aucun déploiement client.
+
 ## Correctif du 19 octobre 2026 — beta4 ynh2
 
 Vidéo 1 Go et signalement fiable des échecs d’actualisation du logo. Voir `VIGILANCE_IMPORT_VIDEO_1GO.md`. Contrôles locaux et revue indépendante favorables ; qualification YunoHost native à exécuter sur le commit publié avant promotion Preview. Aucun déploiement client. La panne logo propre à l’instance cliente n’est pas reproduite depuis le Mac et reste à recevoir.

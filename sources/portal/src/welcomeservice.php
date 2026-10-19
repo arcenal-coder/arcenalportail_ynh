@@ -104,7 +104,7 @@ final class WelcomeService
         $access = $this->context->access;
         $this->context->db->execute('UPDATE welcome_progress SET completed_at=? WHERE company_id=? AND uid=?',[gmdate('c'),$access->company,$access->uid]);
         $this->context->db->execute("UPDATE person SET status='active',revision=revision+1,updated_at=? WHERE company_id=? AND account_uid=? AND status='onboarding'",[gmdate('c'),$access->company,$access->uid]);
-        $this->context->notify('Accueil entreprise terminé','Un équipier a terminé son accueil. Consultez le suivi des parcours.',['admin','rh']);
+        $this->context->notify('Accueil entreprise terminé','Un équipier a terminé son accueil. Consultez le suivi des parcours.',['admin','rh'],event:'welcome.completed');
         $this->context->audit('welcome.complete',$access->uid,1);
     }
 

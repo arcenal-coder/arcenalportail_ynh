@@ -17,10 +17,20 @@ vigilance_configure() {
         VIGILANCE_DATA_DIR="$data_dir" VIGILANCE_COMPANY="${company_name:-Entreprise}" \
         VIGILANCE_INITIAL_ADMIN="${initial_admin:-}" \
         VIGILANCE_BRANDING_ORIGIN="https://$branding_domain" \
+        VIGILANCE_MAIL_FROM="$app@$domain" \
+        VIGILANCE_PUBLIC_URL="https://$domain${path_url%/}/" \
         php"$php_runtime" "$install_dir/bin/configure.php"
     chown "$app:$app" "$install_dir/config.php"
     chown "$app:$app" "$install_dir/application-settings.php"
     # Migrations are performed before opening the new application, never on web requests.
     ynh_exec_as_app env ARCENAL_PORTAL_CONFIG="$install_dir/config.php" \
         php"$php_runtime" "$install_dir/bin/manage.php" migrate
+    vigilance_mail_schedule
+}
+
+vigilance_mail_schedule() {
+    local php_runtime="${php_version:-${phpversion:-8.2}}"
+    ynh_config_add --template="journey-mail.cron" --destination="/etc/cron.d/$app-journey-mail"
+    chown root:root "/etc/cron.d/$app-journey-mail"
+    chmod 644 "/etc/cron.d/$app-journey-mail"
 }

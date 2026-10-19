@@ -24,13 +24,16 @@ final class JourneyContext
         return trim($value);
     }
 
-    public function notify(string $title, string $body, array $roles = [], ?string $uid = null): void
+    public function notify(string $title, string $body, array $roles = [], ?string $uid = null, ?string $event = null): void
     {
+        if ($event !== null && !isset(JourneyMail::EVENTS[$event])) throw new JourneyInput('Événement e-mail invalide.');
+        if ($event !== null && !$this->db->pdo->inTransaction()) throw new \LogicException('Une transaction métier est requise pour la notification e-mail.');
         $accounts = $this->db->rows('SELECT uid,roles FROM account WHERE company_id=? AND enabled=1',[$this->access->company]);
         foreach ($accounts as $account) {
             $matches = $uid !== null ? $account['uid'] === $uid : (bool)array_intersect($roles,json_decode($account['roles'],true,16,JSON_THROW_ON_ERROR));
             if (!$matches) continue;
             $this->db->execute('INSERT INTO journey_notification(company_id,uid,title,body,created_at) VALUES (?,?,?,?,?)',[$this->access->company,$account['uid'],$title,$body,gmdate('c')]);
+            if ($event !== null) $this->db->execute('INSERT INTO journey_mail(notification_id,event,required_roles) VALUES (?,?,?)',[(int)$this->db->pdo->lastInsertId(),$event,json_encode($roles,JSON_THROW_ON_ERROR)]);
         }
     }
 

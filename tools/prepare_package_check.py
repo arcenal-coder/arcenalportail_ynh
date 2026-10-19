@@ -1,5 +1,6 @@
 """Keep native tests intact; use HTTPS preflight when a runner blocks ICMP."""
 from pathlib import Path
+import base64
 import sys
 
 
@@ -50,6 +51,18 @@ def prepare(directory):
 TEST_PORT_ALREADY_USED()'''
     if source.count(original) != 1:
         raise ValueError("Contrôle d'upgrade amont non reconnu ; aucun test supprimé.")
+    mail_check = base64.b64encode(Path(__file__).with_name('native_mail_check.py').read_bytes()).decode()
+    mail_guard = '''    if [ "$ret" -eq 0 ]; then
+        local mail_result
+        mail_result=$(LXC_EXEC "python3 -c 'import base64;exec(base64.b64decode(\\\"MAIL_CHECK_BASE64\\\"))' '$app_id'") || ret=1
+        if [ "$ret" -eq 0 ]; then
+            jq --argjson proof "$mail_result" '. + {arc_mail_transport:$proof}' "$current_test_results" > "$current_test_results.mail" || ret=1
+            if [ "$ret" -eq 0 ]; then mv "$current_test_results.mail" "$current_test_results"; fi
+        fi
+    fi
+
+'''.replace('MAIL_CHECK_BASE64', mail_check)
+    checked = checked.replace('    metrics_stop\n', mail_guard + '    metrics_stop\n')
     tests.write_text(source.replace(original, checked))
 
 

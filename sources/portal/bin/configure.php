@@ -20,7 +20,14 @@ try {
         if ($normalized === '') throw new RuntimeException('Origine de marque invalide.');
         $config['branding_origin'] = $normalized;
     }
-    $settings = array_intersect_key($config,array_flip(['database_path','company_id','company_name','initial_admin','qsse_enabled','branding_origin']));
+    $from=getenv('VIGILANCE_MAIL_FROM');
+    if ($from !== false && $from !== '') {
+        if (!\Vigilance\JourneyMail::validAddress($from)) throw new RuntimeException('Expéditeur invalide.');
+        $config['mail_from']=$from;
+    }
+    $url=getenv('VIGILANCE_PUBLIC_URL');
+    if ($url !== false && $url !== '') $config['public_url']=\Vigilance\JourneyMail::publicUrl($url);
+    $settings = array_intersect_key($config,array_flip(['database_path','company_id','company_name','initial_admin','qsse_enabled','branding_origin','mail_from','public_url']));
     umask(0077);
     $write = static function(string $destination,array $values): void {
         $temporary = $destination.'.'.bin2hex(random_bytes(8));

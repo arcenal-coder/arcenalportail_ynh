@@ -5,4 +5,10 @@ source /usr/share/yunohost/helpers
 ynh_script_progression "Modification de l'adresse de VIGIlance..."
 # The app uses relative URLs; its private data and Bridge configuration do not move.
 ynh_config_change_url_nginx
+php_runtime="${php_version:-${phpversion:-8.2}}"
+ARCENAL_PORTAL_CONFIG="$install_dir/config.php" VIGILANCE_DATA_DIR="$data_dir" \
+    VIGILANCE_MAIL_FROM="$app@$new_domain" \
+    VIGILANCE_PUBLIC_URL="https://$new_domain${new_path%/}/" \
+    php"$php_runtime" "$install_dir/bin/configure.php"
+chown "$app:$app" "$install_dir/application-settings.php"
 ynh_script_progression "Adresse de VIGIlance modifiée."

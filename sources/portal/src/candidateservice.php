@@ -43,9 +43,11 @@ final class CandidateService
             $this->authorizeCandidate($uid);
             $id = bin2hex(random_bytes(16));
             $company = $this->context->access->company;
+            // The opening address is supplied by Administration, not by a public request.
+            $this->context->db->execute('UPDATE account SET notification_email=? WHERE company_id=? AND uid=?',[$email,$company,$uid]);
             $this->context->db->execute('INSERT INTO person(id,company_id,first_name,last_name,email,account_uid,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)',[$id,$company,'','',$email,$uid,'candidate',gmdate('c'),gmdate('c')]);
             $this->context->db->execute('INSERT INTO candidature(person_id,company_id) VALUES (?,?)',[$id,$company]);
-            $this->context->notify('Votre dossier de candidature','Votre dossier vous attend dans votre profil Candidat.',[],$uid);
+            $this->context->notify('Votre dossier de candidature','Votre dossier vous attend dans votre profil Candidat.',[],$uid,'candidate.opened');
             $this->context->audit('candidate.create',$id,1);
             return $id;
         });
@@ -72,7 +74,7 @@ final class CandidateService
             $this->changeStage($id,$revision,$submit?'submitted':'draft',json_encode($values,JSON_THROW_ON_ERROR));
             $this->context->db->execute('UPDATE person SET first_name=?,last_name=?,email=?,revision=revision+1,updated_at=? WHERE id=? AND company_id=?',[$values['first_name'],$values['last_name'],$values['email'],gmdate('c'),$id,$this->context->access->company]);
             $this->context->audit($submit?'candidate.submit':'candidate.save',$id,$revision+1);
-            if ($submit) $this->context->notify('Dossier candidat soumis','Un dossier de candidature est prêt à être examiné.',['admin']);
+            if ($submit) $this->context->notify('Dossier candidat soumis','Un dossier de candidature est prêt à être examiné.',['admin'],event:'candidate.submitted');
         });
     }
 
@@ -111,7 +113,7 @@ final class CandidateService
             $next = ($history ? (int)$history[0]['revision'] : 0)+1;
             $this->context->db->execute("UPDATE interest_offer SET state='superseded' WHERE person_id=? AND state='pending'",[$id]);
             $this->context->db->execute('INSERT INTO interest_offer(person_id,company_id,revision,terms,created_at) VALUES (?,?,?,?,?)',[$id,$this->context->access->company,$next,json_encode($values,JSON_THROW_ON_ERROR),gmdate('c')]);
-            $this->context->notify('Validation d’intérêt disponible','Consultez la nouvelle version du FORM S 13 et transmettez votre décision.',[],$candidate['account_uid']);
+            $this->context->notify('Validation d’intérêt disponible','Consultez la nouvelle version du FORM S 13 et transmettez votre décision.',[],$candidate['account_uid'],'offer.published');
             $this->context->audit('offer.publish',$id,$next);
         });
     }
@@ -137,7 +139,7 @@ final class CandidateService
             $this->context->db->execute('UPDATE interest_offer SET state=?,reason=?,decided_at=? WHERE id=?',[$accept?'accepted':'refused',$reason,gmdate('c'),$offerId]);
             $this->changeStage($id,(int)$candidate['candidate_revision'],$accept?'accepted':'refused');
             if ($accept) $this->activateEmployee($candidate,$offer);
-            $this->context->notify($accept?'Validation d’intérêt acceptée':'FORM S 13 refusé ou à modifier',$accept?'Un candidat a accepté sa proposition. Son accueil peut commencer.':'Une proposition requiert une reprise par la Direction. Consultez le dossier candidat.',$accept?['admin','rh']:['direction']);
+            $this->context->notify($accept?'Validation d’intérêt acceptée':'FORM S 13 refusé ou à modifier',$accept?'Un candidat a accepté sa proposition. Son accueil peut commencer.':'Une proposition requiert une reprise par la Direction. Consultez le dossier candidat.',$accept?['admin','rh']:['direction'],event:$accept?'offer.accepted':'offer.refused');
             $this->context->audit($accept?'offer.accept':'offer.refuse',$id,(int)$offer['revision']);
         });
     }
