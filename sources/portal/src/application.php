@@ -53,6 +53,7 @@ function vigilanceApplication(array $context, string $view): void
             } elseif ($action === 'branding-refresh') {
                 $access->require('admin');
                 $refreshed = $branding->resolve(true);
+                if (!$refreshed['enabled']) throw new InvalidArgumentException('La source du logo YunoHost n’est pas configurée pour cette application.');
                 $successMessage = $refreshed['error'] ? 'La synchronisation YunoHost est indisponible. L’application reste accessible.' : ($refreshed['available'] ? 'Le logo YunoHost a été vérifié.' : 'Aucun logo exploitable n’est déclaré dans YunoHost.');
                 $destination = '?view=settings';
             } elseif ($action === 'account') {

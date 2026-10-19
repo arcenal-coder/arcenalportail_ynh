@@ -53,17 +53,23 @@ final class Branding
         return $state;
     }
 
+    private function failedRefresh(array $state): array
+    {
+        $state['error'] = true;
+        return $this->status($state);
+    }
+
     public function resolve(bool $force = false): array
     {
         $state = $this->cached();
         if ($this->origin === '') return $this->status($this->emptyState());
         $now = ($this->clock)();
         if (!$force && $state['checked_at'] > 0 && $now >= $state['checked_at'] && $now - $state['checked_at'] < self::TTL) return $this->status($state);
-        if (!is_dir($this->directory) && !@mkdir($this->directory, 0700, true)) return $this->status($state);
+        if (!is_dir($this->directory) && !@mkdir($this->directory, 0700, true)) return $this->failedRefresh($state);
         $lock = @fopen($this->directory.'/sync.lock', 'c');
-        if (!$lock) return $this->status($state);
+        if (!$lock) return $this->failedRefresh($state);
         @chmod($this->directory.'/sync.lock',0600);
-        if (!flock($lock,LOCK_EX|LOCK_NB)) { fclose($lock); return $this->status($state); }
+        if (!flock($lock,LOCK_EX|LOCK_NB)) { fclose($lock); return $this->failedRefresh($state); }
         try {
             $state = $this->cached();
             if (!$force && $state['checked_at'] > 0 && $now >= $state['checked_at'] && $now - $state['checked_at'] < self::TTL) return $this->status($state);
@@ -92,7 +98,7 @@ final class Branding
                 $state['error'] = true;
             }
             $state['checked_at'] = $now;
-            $this->write($this->directory.'/state.json',json_encode($state,JSON_THROW_ON_ERROR));
+            if (!$this->write($this->directory.'/state.json',json_encode($state,JSON_THROW_ON_ERROR))) return $this->failedRefresh($state);
             return $this->status($state);
         } finally { flock($lock,LOCK_UN); fclose($lock); }
     }

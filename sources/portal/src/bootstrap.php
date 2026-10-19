@@ -4,6 +4,7 @@ require_once __DIR__.'/load.php';
 
 function vigilanceBootstrap(): array
 {
+    vigilanceUploadLength((int)($_SERVER['CONTENT_LENGTH'] ?? 0),(string)ini_get('post_max_size'));
     if (is_file(__DIR__.'/../.maintenance')) throw new RuntimeException('Maintenance en cours.');
     $path = getenv('ARCENAL_PORTAL_CONFIG') ?: '/etc/arcenal-qsse-portal/config.php';
     $config = \Vigilance\Config::load($path);
@@ -31,6 +32,14 @@ function vigilanceBootstrap(): array
     $access->account();
     $qsse = ($config['qsse_enabled'] ?? true) && ($config['paired'] ?? true) && filter_var($config['gateway_url'] ?? '',FILTER_VALIDATE_URL) && parse_url($config['gateway_url'],PHP_URL_SCHEME) === 'https' && preg_match('/^[a-fA-F0-9]{64}$/D',$config['gateway_key'] ?? '');
     return ['config'=>$config,'uid'=>$uid,'db'=>$db,'access'=>$access,'account'=>$account,'profile'=>$profile,'qsse'=>(bool)$qsse];
+}
+
+function vigilanceUploadLength(int $length, string $setting): void
+{
+    $unit = strtolower(substr(trim($setting),-1));
+    $factor = ['k'=>1024,'m'=>1048576,'g'=>1073741824][$unit] ?? 1;
+    $maximum = (int)$setting*$factor;
+    if ($maximum>0 && $length>$maximum) throw new \Vigilance\JourneyInput('Le transfert dépasse la limite du serveur. Vidéo : 1 Go maximum. Réduisez le fichier ou contactez votre administrateur.');
 }
 
 function vigilanceError(Throwable $error): void

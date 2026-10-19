@@ -73,6 +73,12 @@ class QualificationTest(unittest.TestCase):
         beta3['results']['arc_post_upgrade_install_mode']='750'
         with self.assertRaises(ValueError): self.run_qualification()
 
+    def test_missing_published_beta4_upgrade_rejected(self):
+        beta4='cc0af029bb944761600bd960ae73eca2b6060ea6'
+        self.reports[0]['tests']=[test for test in self.reports[0]['tests'] if test['test_arg']!=beta4]
+        self.native=[test for test in self.native if test['test_arg']!=beta4]
+        with self.assertRaises(ValueError): self.run_qualification()
+
     def test_wrong_revision_rejected(self):
         self.commit='b'*40
         with self.assertRaises(ValueError):self.run_qualification()

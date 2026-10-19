@@ -6,7 +6,9 @@ VIGIlance propose dossiers collaborateurs autonomes, accès personnel, gestion R
 
 ## Mise à jour preview
 
-Paquet candidat : **1.1.0-beta4~ynh1**, branche **preview**.
+Paquet candidat : **1.1.0-beta4~ynh2**, branche **preview**.
+
+Correctif ynh2 : vidéo jusqu’à 1 Go, limites nginx/PHP alignées, contrôle avant transfert. PDF : 20 Mo ; QR et logo : 2 Mo. Les échecs de cache ou de verrou lors de l’actualisation du logo sont signalés sans faux succès. Prévoir environ trois fois la taille vidéo en espace temporaire. Voir les [notes du correctif](docs/VIGILANCE_IMPORT_VIDEO_1GO.md).
 URL source : https://github.com/arcenal-coder/arcenalportail_ynh/tree/preview
 
 Cet incrément raccorde l’interface de démonstration approuvée aux dossiers candidats réels, aux propositions FORM S 13 versionnées et à l’accueil obligatoire. Un refus notifie la Direction ; l’acceptation de la proposition courante ouvre le profil Équipier. L’Administration importe vidéo, quatre chartes PDF et QR de communication, crée le quiz et décide si chaque révision impose une nouvelle démarche. Progression, scores, preuves et notifications internes sont persistés. L’installation neuve ne contient aucune personne ou contenu de démonstration.

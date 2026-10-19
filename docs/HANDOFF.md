@@ -1,5 +1,9 @@
 # Passage de relais
 
+## Correctif du 19 octobre 2026 — beta4 ynh2
+
+Vidéo 1 Go et signalement fiable des échecs d’actualisation du logo. Voir `VIGILANCE_IMPORT_VIDEO_1GO.md`. Contrôles locaux et revue indépendante favorables ; qualification YunoHost native à exécuter sur le commit publié avant promotion Preview. Aucun déploiement client. La panne logo propre à l’instance cliente n’est pas reproduite depuis le Mac et reste à recevoir.
+
 ## Reprise du 19 octobre 2026 — beta4
 
 Source applicative publiée : `624f6368e3e1598cbc79a14ff526e80f7de4264f`. Paquet installable sur la branche Preview exacte, version `1.1.0-beta4~ynh1`. La maquette locale approuvée est raccordée au stockage réel, sans données d’exemple. Voir `VIGILANCE_BETA4.md` pour les fonctions, les limites et le retour arrière.

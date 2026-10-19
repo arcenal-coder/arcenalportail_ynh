@@ -6,7 +6,9 @@ VIGIlance provides autonomous employee dossiers, personal access, HR management,
 
 ## Preview update
 
-Candidate package: **1.1.0-beta4~ynh1**, branch **preview**.
+Candidate package: **1.1.0-beta4~ynh2**, branch **preview**.
+
+ynh2 fix: videos up to 1 GiB, aligned nginx/PHP limits and browser size check. PDF: 20 MiB; QR and logo: 2 MiB. Logo refresh reports cache/lock failures instead of false success. Allow roughly three times the video size in temporary storage. See the [fix notes](docs/VIGILANCE_IMPORT_VIDEO_1GO.md).
 Source URL: https://github.com/arcenal-coder/arcenalportail_ynh/tree/preview
 
 This increment connects the approved demonstration interface to real candidate dossiers, versioned FORM S 13 proposals and mandatory onboarding. Refusal notifies management; acceptance of the current proposal grants the employee profile. Administrators import video, four PDF charters and a communication QR, create the quiz and decide whether each revision requires a repeat step. Progress, scores, evidence and internal notifications are persisted. Fresh installations contain no demonstration people or content.

@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 LEGACY_UPGRADES = {"0740d8a789772d6b061776945d69af33b1159d9b", "3ba0494cdd1191b262593601814f54141e67ad30"}
-UPGRADES = LEGACY_UPGRADES | {"39eaa3c66676a53ebbf99bab497a879e5d556f73"}
+UPGRADES = LEGACY_UPGRADES | {"39eaa3c66676a53ebbf99bab497a879e5d556f73", "cc0af029bb944761600bd960ae73eca2b6060ea6"}
 REQUIRED = {("TEST_PACKAGE_LINTER", ""), ("TEST_INSTALL", "root"), ("TEST_INSTALL", "subdir"),
             ("TEST_INSTALL", "multi"), ("TEST_BACKUP_RESTORE", ""), ("TEST_UPGRADE", ""),
             ("TEST_CHANGE_URL", "")} | {("TEST_UPGRADE", commit) for commit in UPGRADES}

@@ -34,7 +34,13 @@ function setupVideoUpload() {
   if (!input) return;
   input.addEventListener('change', () => {
     const file = input.files[0];
+    input.setCustomValidity('');
     if (!file) return;
+    if (file.size > Number(input.dataset.maxBytes)) {
+      input.setCustomValidity('La vidéo doit faire 1 Go maximum.');
+      input.reportValidity();
+      return;
+    }
     const url = URL.createObjectURL(file);
     const video = document.createElement('video');
     video.preload = 'metadata';
