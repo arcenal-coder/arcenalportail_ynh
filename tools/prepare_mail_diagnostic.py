@@ -14,9 +14,9 @@ def prepare(path):
     text = re.sub(r'^test_upgrade_from\..*\n', '', text, flags=re.M)
     # The pinned parser forbids "only" on default and uses "upgrade" aliases.
     text = text.replace('[default]', '[mail_diagnostic]', 1).replace('[default.', '[mail_diagnostic.')
-    text = text.replace('[mail_diagnostic]\n', '[mail_diagnostic]\nonly = ["upgrade"]\n', 1)
+    text = text.replace('[mail_diagnostic]\n', '[mail_diagnostic]\nonly = ["install.root", "upgrade"]\n', 1)
     text += '\n[default]\nexclude = ["package_linter", "install.root", "install.subdir", "install.nourl", "install.multi", "backup_restore", "upgrade", "change_url"]\n'
-    assert tomllib.loads(text)['mail_diagnostic']['only'] == ['upgrade']
+    assert tomllib.loads(text)['mail_diagnostic']['only'] == ['install.root', 'upgrade']
     path.write_text(text)
 
 

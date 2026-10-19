@@ -69,6 +69,8 @@ jobs:
               --linter-report /tmp/linter_report.json \
               --expected-commit "$GITHUB_SHA" \
               --qualification-output /tmp/arcenal-qualification.json
+          else
+            python3 tools/verify_mail_diagnostic.py /tmp/package_check --expected-commit "$GITHUB_SHA"
           fi
       - name: Make evidence readable
         if: always()

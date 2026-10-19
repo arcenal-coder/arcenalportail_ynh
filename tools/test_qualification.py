@@ -9,6 +9,7 @@ from native_mail_check import safe_local_message
 from email.message import EmailMessage
 from prepare_mail_diagnostic import prepare as prepare_diagnostic
 import tomllib
+from verify_mail_diagnostic import verify as verify_diagnostic
 
 # Pure fixture functions representing native criteria; real CI loads the pinned engine.
 ENGINE = '''
@@ -80,10 +81,18 @@ class QualificationTest(unittest.TestCase):
             config=suites['mail_diagnostic']
             self.assertNotIn('only',suites['default'])
             self.assertIn('upgrade',suites['default']['exclude'])
-            self.assertEqual(config['only'],['upgrade'])
+            self.assertEqual(config['only'],['install.root','upgrade'])
             self.assertNotIn('test_upgrade_from',config)
             self.assertEqual(config['args']['initial_admin'],'package_checker')
             self.assertIn(('TEST_INSTALL','root'),REQUIRED)
+
+    def test_diagnostic_success_requires_real_local_mail_and_cannot_ignore_failure(self):
+        tests=[{'test_type':kind,'test_arg':arg,'test_serie':'mail_diagnostic','results':{'main_result':'success'}} for kind,arg in [('TEST_INSTALL','root'),('TEST_UPGRADE','')]]
+        with self.assertRaises(ValueError):verify_diagnostic(tests)
+        tests[1]['results']['arc_mail_transport']=dict(schema='vigilance-native-mail/v1',**{key:True for key in MAIL_CRITERIA})
+        verify_diagnostic(tests)
+        tests[1]['results']['main_result']='failure'
+        with self.assertRaises(ValueError):verify_diagnostic(tests)
 
     def test_failed_scenario_rejected(self):
         self.native[1]['results']['main_result']='failure'
