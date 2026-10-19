@@ -1,4 +1,4 @@
-# VIGIlance pour YunoHost — candidate preview 1.1.0-beta.2
+# VIGIlance pour YunoHost — candidate preview 1.1.0-beta4
 
 *[Read this README in English.](./README.md)*
 
@@ -6,10 +6,12 @@ VIGIlance propose dossiers collaborateurs autonomes, accès personnel, gestion R
 
 ## Mise à jour preview
 
-Paquet candidat : **1.1.0~beta2+ynh1**, branche **preview**.
+Paquet candidat : **1.1.0-beta4~ynh1**, branche **preview**.
 URL source : https://github.com/arcenal-coder/arcenalportail_ynh/tree/preview
 
-Cet incrément intègre le thème Gratitude validé dans le portail PHP réel, reprend automatiquement le logo déclaré sur le domaine principal YunoHost et ancre la signature éditeur en bas à droite. Le domaine principal est déterminé par la CLI YunoHost ; les paramètres de branding restent séparés de Bridge. Le changement de profil existant reste contrôlé côté serveur, y compris sans JavaScript. La correspondance réelle des groupes YunoHost et les parcours candidat/accueil relèvent des incréments suivants.
+Cet incrément raccorde l’interface de démonstration approuvée aux dossiers candidats réels, aux propositions FORM S 13 versionnées et à l’accueil obligatoire. Un refus notifie la Direction ; l’acceptation de la proposition courante ouvre le profil Équipier. L’Administration importe vidéo, quatre chartes PDF et QR de communication, crée le quiz et décide si chaque révision impose une nouvelle démarche. Progression, scores, preuves et notifications internes sont persistés. L’installation neuve ne contient aucune personne ou contenu de démonstration.
+
+Le thème Gratitude, le logo automatique du domaine principal et le sélecteur de profil contrôlé côté serveur sont conservés. La correspondance des groupes YunoHost, les e-mails sortants, les règles finales des pièces candidates et la génération du PDF officiel FORM S 13 restent à compléter. Lire les [notes de parcours et de publication](docs/VIGILANCE_BETA4.md) avant mise à jour.
 
 Utiliser une instance preview représentative et une sauvegarde vérifiée. Une installation neuve choisit explicitement l'administrateur initial et l'entreprise. Après mise à jour d'une ancienne installation, ouvrir Configuration dans l'application YunoHost, sélectionner l'administrateur initial, enregistrer puis cliquer sur le bouton d'initialisation. L'action vérifie le compte YunoHost et refuse de remplacer un administrateur actif existant. Le premier connecté ne devient jamais administrateur automatiquement.
 
@@ -17,7 +19,7 @@ Utiliser une instance preview représentative et une sauvegarde vérifiée. Une 
 
 ARCenal Bridge reste seul propriétaire de l'appairage QSSE et des permissions de passerelle Dolibarr. La mise à jour conserve config.php à l'identique. Les paramètres privés VIGIlance sont séparés : un appairage Bridge ultérieur ne supprime pas l'accès à la base. Aucun secret de passerelle n'est demandé à l'installation.
 
-SQLite et logos clients restent hors du dossier public. Le paquet comprend migrations, snapshots cohérents, sauvegarde/restauration et panneau d'amorçage administrateur. Les modules QSSE et identifiants historiques sont conservés ; leur portage autonome complet relève d'un prochain lot.
+SQLite, logos clients et médias d’accueil restent hors du dossier public. La migration additive conserve les dossiers existants. Le paquet comprend snapshots cohérents, sauvegarde/restauration des médias et panneau d’amorçage administrateur. Les modules QSSE et identifiants historiques sont conservés ; leur portage autonome complet relève d’un prochain lot.
 
 Les contrôles locaux et les doubles de helpers de cycle de vie passent. Lecture du branding par HTTPS borné avec vérification TLS, cache privé de cinq minutes et conservation du dernier logo valide en cas de panne. Installation, mise à jour, SSO et restauration YunoHost réels restent à réceptionner. Publier cette branche ne modifie pas automatiquement les références figées du catalogue ARCenal.
 

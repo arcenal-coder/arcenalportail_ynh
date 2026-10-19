@@ -4,7 +4,7 @@ id = "arcenalportail"
 name = "VIGIlance"
 description.fr = "Gestion des collaborateurs et espace personnel, propulsés par ARCenal OS"
 description.en = "Employee management and personal workspace, powered by ARCenal OS"
-version = "1.1.0-beta3~ynh1"
+version = "1.1.0-beta4~ynh1"
 maintainers = ["ARCenal"]
 
 [upstream]
@@ -45,7 +45,7 @@ ram.runtime = "32M"
     [resources.system_user]
     [resources.install_dir]
     [resources.data_dir]
-    subdirs = ["logos"]
+    subdirs = ["logos", "welcome"]
     group = "__APP__:---"
     [resources.permissions]
     main.url = "/"

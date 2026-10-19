@@ -3,13 +3,15 @@
 // This application must be deployed behind SSOwat, which authenticates the user.
 require_once __DIR__.'/../src/bootstrap.php';
 require_once __DIR__.'/../src/application.php';
+require_once __DIR__.'/../src/journeycontroller.php';
 header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
-header("Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'");
+header("Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; frame-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'");
 try {
     $context=vigilanceBootstrap();
     $config=$context['config'];$uid=$context['uid'];
     $requested=is_string($_GET['view']??null)?$_GET['view']:'home';
+    if(vigilanceJourney($context,$requested))exit;
     if(!in_array($requested,['mat','report','records','actions','documents'],true)){
         vigilanceApplication($context,$requested);exit;
     }

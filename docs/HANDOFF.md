@@ -1,5 +1,13 @@
 # Passage de relais
 
+## Reprise du 19 octobre 2026 — beta4
+
+Source applicative publiée : `624f6368e3e1598cbc79a14ff526e80f7de4264f`. Paquet installable sur la branche Preview exacte, version `1.1.0-beta4~ynh1`. La maquette locale approuvée est raccordée au stockage réel, sans données d’exemple. Voir `VIGILANCE_BETA4.md` pour les fonctions, les limites et le retour arrière.
+
+Contrôles locaux réussis : 71 assertions nouveaux parcours, 36 contrôles navigateur métier, 59 services du socle, 29 HTTP, 125 navigateur du socle, 19 cycle de vie avec helpers doublés. Revue indépendante favorable après correction de l’arrondi vidéo ; contrôle précommit sans secret. La CI complète source `39215834554` a réussi sur `fcd7b04` avant la correction ciblée `624f636`, dont la CI est relancée. La qualification native du commit paquet et sa recette cliente restent à exécuter ; le catalogue doit conserver la précédente candidate qualifiée jusqu’à succès. Aucun déploiement sur le serveur client.
+
+La suite conserve l’historique du lot visuel précédent.
+
 Objectif actuel : publier le premier incrément réel après validation de la maquette : identité Gratitude et logo YunoHost automatique, sur la branche preview.
 
 État : preview, base 0740d8a, candidate 1.1.0~beta2+ynh1. Cadre PHP réel repris du rendu Gratitude, logo du domaine principal lu automatiquement avec cache privé, signature stable et sélecteur de profil fonctionnant avec ou sans JavaScript. Les services et contrôles métier existants sont conservés. Configuration Bridge inchangée ; branding_origin ajouté seulement à application-settings.php. Aucun changement de schéma.

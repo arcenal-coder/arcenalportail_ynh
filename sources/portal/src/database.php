@@ -48,27 +48,47 @@ final class Database
 
     public function migrate(): void
     {
-        $sql = file_get_contents(__DIR__.'/../migrations/001-dossiers.sql');
-        $hash = hash('sha256', $sql);
-        $this->transaction(function () use ($sql, $hash): void {
+        $this->transaction(function (): void {
             $this->pdo->exec('CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY, checksum TEXT NOT NULL)');
-            $versions = $this->rows('SELECT * FROM schema_version ORDER BY version');
-            if ($versions) {
-                if (count($versions) !== 1 || (int) $versions[0]['version'] !== 1 || !hash_equals($hash, $versions[0]['checksum'])) {
-                    throw new \RuntimeException('Version ou empreinte de schéma incompatible.');
-                }
-                return;
+            $known = $this->migrations();
+            $applied = $this->rows('SELECT * FROM schema_version ORDER BY version');
+            $this->verifyMigrations($applied, $known);
+            foreach ($known as $version => $file) {
+                if ($version <= count($applied)) continue;
+                $this->pdo->exec(file_get_contents($file));
+                $this->execute('INSERT INTO schema_version VALUES (?,?)', [$version,hash_file('sha256',$file)]);
             }
-            $this->pdo->exec($sql);
-            $this->execute('INSERT INTO schema_version VALUES (1,?)', [$hash]);
         });
     }
 
     public function checkSchema(): void
     {
         $rows = $this->rows('SELECT * FROM schema_version ORDER BY version');
-        if (count($rows) !== 1 || (int) $rows[0]['version'] !== 1 || !hash_equals(hash_file('sha256', __DIR__.'/../migrations/001-dossiers.sql'), $rows[0]['checksum'])) {
-            throw new \RuntimeException('Schéma non compatible.');
+        $known = $this->migrations();
+        $this->verifyMigrations($rows, $known);
+        if (count($rows) !== count($known)) throw new \RuntimeException('Mise à jour du schéma nécessaire.');
+    }
+
+    private function migrations(): array
+    {
+        $files = glob(__DIR__.'/../migrations/[0-9][0-9][0-9]-*.sql') ?: [];
+        sort($files,SORT_STRING);
+        $known = [];
+        foreach ($files as $index => $file) {
+            $version = (int)basename($file);
+            if ($version !== $index+1) throw new \RuntimeException('Suite de migrations incompatible.');
+            $known[$version] = $file;
+        }
+        return $known;
+    }
+
+    private function verifyMigrations(array $rows, array $known): void
+    {
+        foreach ($rows as $index => $row) {
+            $version = (int)$row['version'];
+            if ($version !== $index+1 || !isset($known[$version]) || !hash_equals(hash_file('sha256',$known[$version]),$row['checksum'])) {
+                throw new \RuntimeException('Version ou empreinte de schéma incompatible.');
+            }
         }
     }
 

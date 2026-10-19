@@ -6,7 +6,8 @@ import hashlib
 import json
 from pathlib import Path
 
-UPGRADES = {"0740d8a789772d6b061776945d69af33b1159d9b", "3ba0494cdd1191b262593601814f54141e67ad30"}
+LEGACY_UPGRADES = {"0740d8a789772d6b061776945d69af33b1159d9b", "3ba0494cdd1191b262593601814f54141e67ad30"}
+UPGRADES = LEGACY_UPGRADES | {"39eaa3c66676a53ebbf99bab497a879e5d556f73"}
 REQUIRED = {("TEST_PACKAGE_LINTER", ""), ("TEST_INSTALL", "root"), ("TEST_INSTALL", "subdir"),
             ("TEST_INSTALL", "multi"), ("TEST_BACKUP_RESTORE", ""), ("TEST_UPGRADE", ""),
             ("TEST_CHANGE_URL", "")} | {("TEST_UPGRADE", commit) for commit in UPGRADES}
@@ -71,7 +72,7 @@ def qualify(reports, linter, expected_commit, native_tests, engine):
     legacy_findings = []
     for test in adjusted:
         result = test["results"]
-        legacy_mode_repaired = (test["test_type"] == "TEST_UPGRADE" and test.get("test_arg") in UPGRADES
+        legacy_mode_repaired = (test["test_type"] == "TEST_UPGRADE" and test.get("test_arg") in LEGACY_UPGRADES
                                 and str(result.get("arc_post_upgrade_install_mode")) == "750")
         if result.get("install_dir_permissions") and legacy_mode_repaired:
             legacy_findings.append({"upgrade_from": test["test_arg"], "initial_install_permissions": result["install_dir_permissions"], "verified_post_upgrade_mode": "750"})

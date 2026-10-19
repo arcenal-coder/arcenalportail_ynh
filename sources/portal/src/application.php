@@ -25,7 +25,7 @@ function vigilanceApplication(array $context, string $view): void
         readfile($path);
         return;
     }
-    $labels = ['employee'=>'Équipier','rh'=>'RH','manager'=>'Manager','direction'=>'Direction','admin'=>'Administration','qsse'=>'QSSE','crp'=>'CRP','tutor'=>'Tuteur'];
+    $labels = ['employee'=>'Équipier','rh'=>'RH','manager'=>'Manager','direction'=>'Direction','admin'=>'Administration','qsse'=>'QSSE','crp'=>'CRP','tutor'=>'Tuteur','candidate'=>'Candidat','rp'=>'RP'];
     $statuses = ['candidate'=>'Candidat','onboarding'=>'En intégration','active'=>'Actif','leaving'=>'En sortie','archived'=>'Archivé'];
     $error = '';
     $notice = $_SESSION['notice'] ?? '';

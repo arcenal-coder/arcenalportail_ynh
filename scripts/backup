@@ -10,5 +10,6 @@ ARCENAL_PORTAL_CONFIG="$install_dir/config.php" \
     php"$php_runtime" "$install_dir/bin/manage.php" snapshot "$install_dir/.backup/vigilance.sqlite"
 ynh_backup "$install_dir"
 ynh_backup "$data_dir/logos"
+if test -d "$data_dir/welcome"; then ynh_backup "$data_dir/welcome"; fi
 ynh_backup "/etc/nginx/conf.d/$domain.d/$app.conf"
 ynh_backup "/etc/php/$php_runtime/fpm/pool.d/$app.conf"

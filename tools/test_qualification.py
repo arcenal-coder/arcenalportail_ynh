@@ -3,7 +3,7 @@ import tempfile
 import unittest
 import subprocess
 from pathlib import Path
-from verify_package_report import qualify, REQUIRED
+from verify_package_report import qualify, REQUIRED, LEGACY_UPGRADES
 from prepare_package_check import prepare
 
 # Pure fixture functions representing native criteria; real CI loads the pinned engine.
@@ -61,6 +61,18 @@ class QualificationTest(unittest.TestCase):
         self.reports[0]['tests'].pop()
         with self.assertRaises(ValueError):self.run_qualification()
 
+    def test_missing_published_beta3_upgrade_rejected(self):
+        beta3='39eaa3c66676a53ebbf99bab497a879e5d556f73'
+        self.reports[0]['tests']=[test for test in self.reports[0]['tests'] if test['test_arg']!=beta3]
+        self.native=[test for test in self.native if test['test_arg']!=beta3]
+        with self.assertRaises(ValueError): self.run_qualification()
+
+    def test_beta3_unsafe_permissions_cannot_be_excused_as_legacy(self):
+        beta3=next(test for test in self.native if test['test_arg']=='39eaa3c66676a53ebbf99bab497a879e5d556f73')
+        beta3['results']['install_dir_permissions']='failure'
+        beta3['results']['arc_post_upgrade_install_mode']='750'
+        with self.assertRaises(ValueError): self.run_qualification()
+
     def test_wrong_revision_rejected(self):
         self.commit='b'*40
         with self.assertRaises(ValueError):self.run_qualification()
@@ -82,7 +94,7 @@ class QualificationTest(unittest.TestCase):
         with self.assertRaises(ValueError):self.run_qualification()
 
     def test_legacy_permissions_need_proven_post_upgrade_repair(self):
-        historical=next(t for t in self.native if t['test_type']=='TEST_UPGRADE' and t['test_arg'])
+        historical=next(t for t in self.native if t['test_type']=='TEST_UPGRADE' and t['test_arg'] in LEGACY_UPGRADES)
         historical['results']['install_dir_permissions']='failure'
         with self.assertRaises(ValueError): self.run_qualification()
         historical['results']['arc_post_upgrade_install_mode']='750'

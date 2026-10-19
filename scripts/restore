@@ -4,6 +4,7 @@ source /usr/share/yunohost/helpers
 php_runtime="${php_version:-${phpversion:-8.2}}"
 ynh_restore "$install_dir"
 ynh_restore "$data_dir/logos"
+ynh_restore "$data_dir/welcome"
 ynh_restore "/etc/nginx/conf.d/$domain.d/$app.conf"
 ynh_restore "/etc/php/$php_runtime/fpm/pool.d/$app.conf"
 test -f "$install_dir/.backup/vigilance.sqlite" || ynh_die "Snapshot VIGIlance absent de la sauvegarde."

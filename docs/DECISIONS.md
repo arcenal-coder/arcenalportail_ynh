@@ -1,5 +1,8 @@
 # Décisions
 
+- 19 octobre 2026 — beta4 reprend les parcours de la démonstration avec stockage réel. L’état initial est vide ; médias et quiz se configurent dans l’Administration. Le refus d’un FORM S 13 notifie la Direction et ne fait pas passer Équipier ; une nouvelle proposition doit être acceptée.
+- Les migrations sont additives et les fichiers d’accueil privés sont sauvegardés. Un retour beta3 nécessite la restauration de la base et du code beta3 ensemble. Les e-mails et la synchronisation des groupes restent des intégrations distinctes.
+
 - ARCenal Portail reste une application SSO/LDAP autonome. Il ne crée ni ne modifie de permission d’un autre applicatif.
 - ARCenal Bridge est seul propriétaire de l’appairage inter-applications et de la permission YunoHost limitée à la passerelle QSSE.
 - L’appairage utilise un code à usage unique, valable vingt minutes. La clé HMAC durable n’est jamais demandée dans l’interface d’installation.

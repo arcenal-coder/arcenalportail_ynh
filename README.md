@@ -1,4 +1,4 @@
-# VIGIlance for YunoHost — preview candidate 1.1.0-beta.2
+# VIGIlance for YunoHost — preview candidate 1.1.0-beta4
 
 *[Lire ce README en français.](./README_fr.md)*
 
@@ -6,10 +6,12 @@ VIGIlance provides autonomous employee dossiers, personal access, HR management,
 
 ## Preview update
 
-Candidate package: **1.1.0~beta2+ynh1**, branch **preview**.
+Candidate package: **1.1.0-beta4~ynh1**, branch **preview**.
 Source URL: https://github.com/arcenal-coder/arcenalportail_ynh/tree/preview
 
-This increment integrates the approved Gratitude styling into the real PHP application, automatically uses the logo declared on the main YunoHost domain, and anchors the publisher signature at the bottom right. The main domain is obtained through YunoHost's CLI; branding settings stay separate from Bridge. Existing profile switching remains server-validated, including without JavaScript. The real YunoHost group mapping and the candidate/onboarding workflows are subsequent increments.
+This increment connects the approved demonstration interface to real candidate dossiers, versioned FORM S 13 proposals and mandatory onboarding. Refusal notifies management; acceptance of the current proposal grants the employee profile. Administrators import video, four PDF charters and a communication QR, create the quiz and decide whether each revision requires a repeat step. Progress, scores, evidence and internal notifications are persisted. Fresh installations contain no demonstration people or content.
+
+The Gratitude theme, automatic main-domain logo and server-validated profile switch remain. Direct YunoHost group mapping, outgoing email, final candidate attachment rules and official FORM S 13 PDF generation are still incomplete. Read the [journey and publication notes](docs/VIGILANCE_BETA4.md) before upgrading.
 
 Use a representative preview instance with a verified backup. Fresh installations explicitly select the initial administrator and company name. After upgrading an older installation, open the app's Configuration in YunoHost, select the initial administrator, save the choice and use the initialization button. The action verifies the YunoHost account and refuses to replace an existing active administrator. No first-login automatic elevation occurs.
 
@@ -17,7 +19,7 @@ Use a representative preview instance with a verified backup. Fresh installation
 
 ARCenal Bridge remains the sole owner of QSSE pairing and Dolibarr gateway permissions. Upgrades preserve its config.php byte-for-byte. VIGIlance stores its private application settings separately, so later Bridge pairing cannot erase database access. No gateway key is requested by the installer.
 
-SQLite and client logos stay outside the public web root. The package includes migrations, consistent snapshots, backup/restore and an initial-admin configuration panel. Existing QSSE modules and historical identifiers are retained; their full autonomous port is a later work item.
+SQLite, client logos and uploaded welcome media stay outside the public web root. The additive schema migration preserves existing dossiers. The package includes consistent snapshots, media backup/restore and an initial-admin configuration panel. Existing QSSE modules and historical identifiers are retained; their full autonomous port is a later work item.
 
 Local checks and lifecycle helper doubles passed. Branding uses bounded HTTPS reads with TLS checks, a private five-minute cache and the last valid logo on source failure. Real YunoHost installation, upgrade, SSO and restore still require acceptance. Publishing this branch does not itself update the pinned ARCenal catalog feeds.
 

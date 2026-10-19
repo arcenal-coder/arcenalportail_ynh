@@ -4,7 +4,7 @@ namespace Vigilance;
 
 final class Access
 {
-    public const ROLES = ['employee', 'rh', 'manager', 'direction', 'admin', 'qsse', 'crp', 'tutor'];
+    public const ROLES = ['employee', 'rh', 'manager', 'direction', 'admin', 'qsse', 'crp', 'tutor', 'candidate', 'rp'];
 
     public function __construct(private Database $db, public int $company, public string $uid, public ?string $profile = null)
     {

@@ -39,6 +39,18 @@ Pour une instance multiple, utiliser l'identifiant et les chemins réels. L'amor
 
 Les fonctions historiques MAT, remontées et PAO restent accessibles avec une passerelle configurée et un profil QSSE/CRP explicitement autorisé. Le module vérifie aussi l'identité côté passerelle. Les pièces historiques ne sont pas déplacées et les secrets ne sont pas envoyés au navigateur. Les connexions et documents associés à Dolibarr seront repris dans un lot de portage QSSE autonome ; ce portage n'est pas revendiqué ici.
 
+## Parcours de la démonstration, avec stockage réel
+
+Le tableau de bord, les candidatures, les propositions FORM S 13, les contenus administrables et l'accueil entreprise reprennent la maquette locale approuvée. L'installation ne crée ni personne fictive, ni média, ni quiz d'exemple.
+
+L'Administration ouvre un dossier pour une identité SSO déjà observée. Le profil Candidat permet de saisir son dossier et d'accepter ou de refuser la proposition courante. Le refus notifie la Direction ; une nouvelle proposition est requise pour poursuivre. L'acceptation ouvre le profil Équipier et l'accueil obligatoire.
+
+Administration → Contenus d'accueil permet d'importer une vidéo MP4/WebM (256 Mo maximum), les quatre PDF (20 Mo chacun), un QR de communication (2 Mo) et de créer le quiz (questions, choix, corrigé, points). Le seuil de réussite est de 26/30. Chaque publication demande explicitement si une nouvelle démarche est obligatoire pour les équipiers déjà accueillis. Les fichiers sont privés sous `welcome/`, à côté de la base, hors racine web ; ils sont inclus dans les scripts de sauvegarde/restauration. La lecture vidéo accepte les requêtes HTTP partielles et sa progression est contrôlée par temps écoulé côté serveur. Cela trace la lecture, sans prétendre mesurer l'attention humaine.
+
+La migration additive `002-journeys.sql` est exécutée par l'outil de gestion pendant l'installation/mise à jour. Aucun dossier existant n'est effacé. Les notifications sont actuellement internes à l'application ; l'envoi des e-mails d'invitation et de suivi reste à raccorder. Les rôles sont applicatifs ; la projection des groupes LDAP YunoHost reste à intégrer. La liste définitive des pièces candidates sera configurée dans un lot suivant.
+
+Pour examiner une instance locale vide, `dev/preview.php`, hors du paquet distribué, peut initialiser un stockage dédié puis servir l'application uniquement sur `127.0.0.1:8771`. Le compte local de prévisualisation est technique et n'est jamais intégré au portail distribué.
+
 Les profils SIRH n'appellent pas cette passerelle. Un module non configuré n'affiche pas de fonctions QSSE et refuse ses routes directes. Une panne de la connexion optionnelle ne bloque pas les dossiers.
 
 ## Exploitation et qualification
