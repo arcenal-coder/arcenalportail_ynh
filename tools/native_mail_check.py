@@ -164,13 +164,17 @@ echo json_encode(['id'=>$id,'company'=>(int)$c['company_id'],'url'=>$c['public_u
         raise ValueError("Sender is not provisioned for the application")
     # No external SMTP egress during the check, even on a misconfigured fixture.
     with blocked_smtp_egress():
-        run("systemctl", "start", "postfix", "dovecot")
+        # The app-CI image leaves the antispam service stopped; provision the
+        # existing full local mail stack before testing actual delivery.
+        run("systemctl", "start", "redis-server", "rspamd", "postfix", "dovecot")
+        run('postfix', 'status')
         accepted = json.loads(run(*prefix, php, install + "/bin/send-journey-mail.php"))
         if accepted["sent"] != 1 or accepted["retry"] or accepted["failed"]:
             raise ValueError("Real local MTA did not accept the message")
         message_id = hashlib.sha256(f'{identity["url"]}|{identity["company"]}|{identity["id"]}'.encode()).hexdigest() + "@" + domain
         delivered = ""
-        for _ in range(30):
+        run('postqueue', '-f')
+        for _ in range(90):
             delivered = run("doveadm", "search", "-u", "package_checker", "header", "Message-ID", "<" + message_id + ">")
             if delivered:
                 break
@@ -193,7 +197,7 @@ if __name__ == "__main__":
         with manual_worker_only():
             print(json.dumps(check(sys.argv[1])))
     except (ValueError, RuntimeError) as error:
-        raise SystemExit('VIGIlance native local-mail check failed: ' + str(error)) from None
+        raise SystemExit('VIGIlance native local-mail check failed: stage=' + STAGE + ' ' + str(error)) from None
     except Exception as error:
         # Command output can contain addresses or server details: never print it.
         raise SystemExit('VIGIlance native local-mail check failed: stage=' + STAGE + ' exception=' + type(error).__name__) from None
