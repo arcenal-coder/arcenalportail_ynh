@@ -35,6 +35,40 @@ def safe_local_message(content, sender, recipient, url):
             and 'NATIVE_INTERNAL_ONLY' not in body and 'NATIVE_PRIVATE_BODY' not in body)
 
 
+def queue_diagnostics(text):
+    # Only fixed categories and counts: never return queue addresses or raw reasons.
+    categories = {'dns': ('name service error', 'host or domain name not found'),
+                  'connection_refused': ('connection refused',), 'milter': ('milter', 'rspamd'),
+                  'lmtp': ('lmtp', 'dovecot'), 'permission': ('permission denied',),
+                  'unknown_user': ('user unknown', 'unknown user', 'unknown recipient')}
+    summary=[]
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        row=json.loads(line)
+        codes=set()
+        for recipient in row.get('recipients',[]):
+            reason=recipient.get('delay_reason','').lower()
+            codes.update(code for code, needles in categories.items() if any(needle in reason for needle in needles))
+        summary.append({'deferred':row.get('queue_name')=='deferred','reason_codes':sorted(codes) or ['other']})
+    return summary
+
+
+def delivery_diagnostics():
+    from pathlib import Path
+    states={service:subprocess.run(['systemctl','is-active','--quiet',service],capture_output=True).returncode==0
+            for service in ['postfix','postfix@-','dovecot','rspamd']}
+    try:
+        queued=queue_diagnostics(run('postqueue','-j'))
+    except Exception:
+        queued=[{'queue_inspection_failed':True}]
+    try:
+        maildrop=sum(1 for _ in Path('/var/spool/postfix/maildrop').iterdir())
+    except OSError:
+        maildrop=-1
+    return {'active_services':states,'queued':queued,'maildrop_count':maildrop}
+
+
 @contextmanager
 def manual_worker_only():
     global STAGE
@@ -142,7 +176,7 @@ echo json_encode(['id'=>$id,'company'=>(int)$c['company_id'],'url'=>$c['public_u
                 break
             time.sleep(1)
         if not delivered:
-            raise ValueError("Local mailbox did not receive message")
+            raise ValueError("Local mailbox did not receive message: " + json.dumps(delivery_diagnostics()))
         content = run("doveadm", "fetch", "-u", "package_checker", "hdr.from hdr.to text", "header", "Message-ID", "<" + message_id + ">")
         if not safe_local_message(content, identity['from'], recipient, identity['url']):
             raise ValueError("Unexpected message headers or private content")

@@ -5,7 +5,8 @@ import subprocess
 from pathlib import Path
 from verify_package_report import qualify, REQUIRED, LEGACY_UPGRADES, MAIL_CRITERIA
 from prepare_package_check import prepare
-from native_mail_check import safe_local_message, blocked_smtp_egress
+from native_mail_check import safe_local_message, blocked_smtp_egress, queue_diagnostics
+import json
 from email.message import EmailMessage
 from prepare_mail_diagnostic import prepare as prepare_diagnostic
 import tomllib
@@ -90,6 +91,12 @@ class QualificationTest(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 with blocked_smtp_egress():
                     self.fail('Transport must not run without egress protection')
+
+    def test_queue_diagnostic_contains_no_addresses_or_raw_server_reason(self):
+        raw=json.dumps({'queue_name':'deferred','sender':'private@example.invalid','recipients':[{'address':'recipient@example.invalid','delay_reason':'Host or domain name not found for private.example.invalid; Connection refused to private.example.invalid'}]})
+        result=queue_diagnostics(raw)
+        self.assertEqual(result,[{'deferred':True,'reason_codes':['connection_refused','dns']}])
+        self.assertNotIn('example.invalid',str(result))
 
     def test_diagnostic_plan_is_explicitly_restricted_and_cannot_qualify(self):
         with tempfile.TemporaryDirectory() as folder:
