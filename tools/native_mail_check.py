@@ -55,6 +55,29 @@ def manual_worker_only():
             STAGE = failed_stage
 
 
+@contextmanager
+def blocked_smtp_egress():
+    global STAGE
+    STAGE = 'smtp_egress_policy'
+    table = 'vigilance_mail_' + str(os.getpid())
+    rules = f'''table inet {table} {{
+  chain output {{
+    type filter hook output priority 0; policy accept;
+    meta nfproto ipv4 tcp dport {{ 25, 465, 587 }} ip daddr != 127.0.0.0/8 reject
+    meta nfproto ipv6 tcp dport {{ 25, 465, 587 }} ip6 daddr != ::1 reject
+  }}
+}}
+'''
+    # YunoHost 12 supplies nftables, not the optional iptables compatibility tools.
+    result = subprocess.run(['nft','-f','-'],input=rules,capture_output=True,text=True,timeout=15)
+    if result.returncode:
+        raise RuntimeError('Local SMTP egress blocking failed')
+    try:
+        yield
+    finally:
+        subprocess.run(['nft','delete','table','inet',table],capture_output=True,timeout=15,check=True)
+
+
 def check(app):
     global STAGE
     if not re.fullmatch(r"arcenalportail(?:__[0-9]+)?", app):
@@ -106,12 +129,7 @@ echo json_encode(['id'=>$id,'company'=>(int)$c['company_id'],'url'=>$c['public_u
     if not any(line.split() == [identity["from"], app] for line in sender_map.splitlines()):
         raise ValueError("Sender is not provisioned for the application")
     # No external SMTP egress during the check, even on a misconfigured fixture.
-    rules = []
-    try:
-        for binary, loopback in [("iptables", "127.0.0.0/8"), ("ip6tables", "::1/128")]:
-            rule = ["OUTPUT", "-p", "tcp", "-m", "multiport", "--dports", "25,465,587", "!", "-d", loopback, "-j", "REJECT"]
-            run(binary, "-I", *rule)
-            rules.append((binary, rule))
+    with blocked_smtp_egress():
         run("systemctl", "start", "postfix", "dovecot")
         accepted = json.loads(run(*prefix, php, install + "/bin/send-journey-mail.php"))
         if accepted["sent"] != 1 or accepted["retry"] or accepted["failed"]:
@@ -134,9 +152,6 @@ echo json_encode(['id'=>$id,'company'=>(int)$c['company_id'],'url'=>$c['public_u
             raise ValueError("Sent event was submitted twice")
         return {"schema": "vigilance-native-mail/v1", "cron": True, "sender": True,
                 "mta_accepted": True, "delivered_local": True, "private_content": True, "no_resend": True}
-    finally:
-        for binary, rule in reversed(rules):
-            subprocess.run([binary, "-D", *rule], capture_output=True, timeout=15)
 
 
 if __name__ == "__main__":

@@ -5,11 +5,13 @@ import subprocess
 from pathlib import Path
 from verify_package_report import qualify, REQUIRED, LEGACY_UPGRADES, MAIL_CRITERIA
 from prepare_package_check import prepare
-from native_mail_check import safe_local_message
+from native_mail_check import safe_local_message, blocked_smtp_egress
 from email.message import EmailMessage
 from prepare_mail_diagnostic import prepare as prepare_diagnostic
 import tomllib
 from verify_mail_diagnostic import verify as verify_diagnostic
+from unittest.mock import patch
+from types import SimpleNamespace
 
 # Pure fixture functions representing native criteria; real CI loads the pinned engine.
 ENGINE = '''
@@ -70,6 +72,24 @@ class QualificationTest(unittest.TestCase):
             self.assertTrue(safe_local_message(raw,'app@example.invalid','recipient@example.invalid',url))
         message.set_content('NATIVE_PRIVATE_BODY '+url, cte='base64')
         self.assertFalse(safe_local_message('text:\n'+message.as_string(),'app@example.invalid','recipient@example.invalid',url))
+
+    def test_native_policy_uses_builtin_nft_and_restores_table(self):
+        with patch('native_mail_check.subprocess.run',return_value=SimpleNamespace(returncode=0)) as command:
+            with self.assertRaises(ValueError):
+                with blocked_smtp_egress():
+                    raise ValueError('fixture')
+            self.assertEqual(command.call_count,2)
+            self.assertEqual(command.call_args_list[0].args[0],['nft','-f','-'])
+            rules=command.call_args_list[0].kwargs['input']
+            self.assertIn('ip daddr != 127.0.0.0/8 reject',rules)
+            self.assertIn('ip6 daddr != ::1 reject',rules)
+            self.assertEqual(command.call_args_list[1].args[0][:4],['nft','delete','table','inet'])
+
+    def test_native_policy_failure_prevents_transport(self):
+        with patch('native_mail_check.subprocess.run',return_value=SimpleNamespace(returncode=1)):
+            with self.assertRaises(RuntimeError):
+                with blocked_smtp_egress():
+                    self.fail('Transport must not run without egress protection')
 
     def test_diagnostic_plan_is_explicitly_restricted_and_cannot_qualify(self):
         with tempfile.TemporaryDirectory() as folder:
