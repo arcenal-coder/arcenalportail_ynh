@@ -1,0 +1,12 @@
+# Keep all default detectors. These two values are verified SHA-256 file
+# digests of sources/portal/src/access.php in the pinned input archives,
+# not credentials. Both the path AND the exact matched value must agree.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Verified access.php file digest in the two S1-05 inventories"
+condition = "AND"
+regexTarget = "match"
+paths = ['''(^|/)qualification/sirh1-native/prepared/expected(-baseline)?-code\.json$''']
+regexes = ['''access\.php": "85f29f44a5369919b4ef9583468e06ee163f8d6ebb965ef1ae6604492674d745"''']

@@ -1,35 +1,31 @@
+# LOCAL COPY ONLY. Not registered under .github/workflows/ and never dispatched.
+# After explicit authorization, replace the existing workflow only on the
+# qualification branch, retaining its ID. No push trigger, Preview or promotion.
 name: Qualify YunoHost package
 on:
   workflow_dispatch:
-    inputs:
-      diagnostic_mail:
-        description: Single-upgrade mail diagnostic only (never qualifies a release)
-        type: boolean
-        default: false
-  push:
-    branches: [preview]
-    paths:
-      - manifest.toml
-      - tests.toml
-      - scripts/**
-      - conf/**
-      - sources/**
-      - tools/**
-      - .github/workflows/yunohost.yml
 permissions:
   contents: read
 concurrency:
-  group: yunohost-${{ github.ref }}
-  cancel-in-progress: true
+  group: s105-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
   qualification-tools:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - run: python -m unittest discover -s tools -p 'test_*.py' -v
+      - name: Check prepared controls, without any native action
+        run: |
+          bash -n qualification/sirh1-native/execution/run.sh
+          bash -n qualification/sirh1-native/execution/bridge.sh
+          php -l qualification/sirh1-native/execution/probe.php
+          python3 -c 'import ast,pathlib; [ast.parse(p.read_text()) for p in pathlib.Path("qualification/sirh1-native/execution").glob("*.py")]'
+          python3 qualification/sirh1-native/execution/prepare.py verify-inputs --inputs qualification/sirh1-native/prepared
   package:
     needs: qualification-tools
     runs-on: ubuntu-24.04
@@ -38,7 +34,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Prepare isolated Incus runner
+      - name: Require the authorized qualification branch
+        run: |
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REPOSITORY" = arcenal-coder/arcenalportail_ynh
+          test "$GITHUB_REF" = refs/heads/qualification/sirh1-native-ynh3
+      - name: Prepare isolated Incus runner (existing recipe)
         run: |
           sudo systemctl stop docker.service docker.socket || true
           sudo apt-get update
@@ -50,41 +51,33 @@ jobs:
           sudo iptables -I FORWARD -i incusbr0 -j ACCEPT
           sudo iptables -I FORWARD -o incusbr0 -j ACCEPT
           sudo incus image copy yunohost:yunohost/bookworm-stable/appci local: --alias yunohost-bookworm-stable-appci
-      - name: Run official package checker
-        run: |
-          git clone https://github.com/YunoHost/package_check /tmp/package_check
-          git -C /tmp/package_check checkout f7d32cadac3cfced282decede024707fba9e6ec6
-          python3 -m venv --system-site-packages /tmp/package-check-env
-          /tmp/package-check-env/bin/pip install imgkit
-          python3 tools/prepare_package_check.py /tmp/package_check
-          if [[ "${{ inputs.diagnostic_mail }}" == "true" ]]; then
-            python3 tools/prepare_mail_diagnostic.py tests.toml
-          fi
-          python3 /tmp/package_check/lib/parse_tests_toml.py "$GITHUB_WORKSPACE" > /tmp/package_plan.json
-          sudo env PATH="/tmp/package-check-env/bin:$PATH" YNHDEV_BACKEND=incus DIST=bookworm YNH_BRANCH=stable /tmp/package_check/package_check.sh "$GITHUB_WORKSPACE"
-          sudo chown -R "$USER:$USER" /tmp/package_check
-          python3 /tmp/package_check/package_linter/package_linter.py "$GITHUB_WORKSPACE" --json > /tmp/linter_report.json
-          if [[ "${{ inputs.diagnostic_mail }}" != "true" ]]; then
-            python3 tools/verify_package_report.py /tmp/package_check \
-              --linter-report /tmp/linter_report.json \
-              --expected-commit "$GITHUB_SHA" \
-              --qualification-output /tmp/arcenal-qualification.json
-          else
-            python3 tools/verify_mail_diagnostic.py /tmp/package_check --expected-commit "$GITHUB_SHA"
-          fi
-      - name: Make evidence readable
+          mkdir -p "$RUNNER_TEMP/s105-platform"
+          sudo incus query /1.0/images/aliases/yunohost-bookworm-stable-appci > "$RUNNER_TEMP/s105-platform/alias.json"
+          fingerprint=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1]));print(d.get("metadata",d)["target"])' "$RUNNER_TEMP/s105-platform/alias.json")
+          sudo incus query "/1.0/images/$fingerprint" > "$RUNNER_TEMP/s105-platform/image.json"
+      - name: Run existing checker with the additional S1-05 hooks
+        run: bash qualification/sirh1-native/execution/run.sh
+      - name: Make raw evidence readable even after failure
         if: always()
-        run: sudo chown -R "$USER:$USER" /tmp/package_check || true
-      - name: Keep qualification evidence
+        run: |
+          sudo chown -R "$USER:$USER" "$RUNNER_TEMP/s105" "$RUNNER_TEMP/package_check" "$RUNNER_TEMP/s105-platform" || true
+      - name: Keep raw qualification evidence, no promotion
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.diagnostic_mail && 'yunohost-mail-diagnostic' || 'yunohost-qualification' }}
+          name: sirh1-native-ynh3
+          retention-days: 7
+          if-no-files-found: error
           path: |
-            /tmp/package_check/results_*.json
-            /tmp/package_check/full_log_*.log
-            /tmp/package_check/arcenal-evidence/
-            /tmp/package_plan.json
-            /tmp/linter_report.json
-            /tmp/arcenal-qualification.json
-          if-no-files-found: warn
+            ${{ runner.temp }}/s105/evidence/
+            ${{ runner.temp }}/s105/stage.json
+            ${{ runner.temp }}/s105/package-plan.json
+            ${{ runner.temp }}/s105/linter.json
+            ${{ runner.temp }}/s105/package-qualification.json
+            ${{ runner.temp }}/s105/s105-result.json
+            ${{ runner.temp }}/s105/tests.sh.used
+            ${{ runner.temp }}/s105/native_mail_check.py.used
+            ${{ runner.temp }}/s105-platform/
+            ${{ runner.temp }}/package_check/results_*.json
+            ${{ runner.temp }}/package_check/full_log_*.log
+            ${{ runner.temp }}/package_check/arcenal-evidence/

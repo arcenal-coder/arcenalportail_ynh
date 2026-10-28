@@ -1,0 +1,8 @@
+{
+  "candidate_sha256": "7254e687a06119ecc419017eba333b350a513e7f4dfbc69ea48da3f2dcacffdf",
+  "baseline_sha256": "dec344d4fbdfe5c849f4eb649acffb25450f541d1b846d77c0cb7c4873c6f1fd",
+  "fault_sha256": "cfbee010470f029f86319621fe2458a23fff520d776c8ddd64976834e642f263",
+  "baseline_git": "4cae33026b570c089a73edaba505f1067117cc42",
+  "historical_equivalence": "INDETERMINATE",
+  "fault_delta": "sources/portal/migrations/006-mission-work-membership.sql"
+}
