@@ -22,6 +22,28 @@ APP = 'arcenalportail'
 GROUP_PREFIX = 's105_vig_'  # never collide with YunoHost's per-user primary groups
 
 
+def split_inventory(inventory):
+    managed, accompanying = {}, {}
+    for name, digest in inventory.items():
+        if name.split('/', 1)[0] in {'src', 'bin', 'views', 'public', 'migrations'}:
+            managed[name] = digest
+        elif name in {'COPYING', 'README.md', 'config.example.php'}:
+            accompanying[name] = digest
+        else:
+            raise RuntimeError('Unclassified portal inventory member')
+    if set(accompanying) != {'COPYING', 'README.md', 'config.example.php'}:
+        raise RuntimeError('Incomplete accompanying inventory')
+    return managed, accompanying
+
+
+def check_installed(state, expected, preserved=None):
+    managed, accompanying = split_inventory(expected)
+    if preserved is not None:
+        _, accompanying = split_inventory(preserved)
+    if state['code'] != managed or state['accompanying'] != accompanying:
+        raise RuntimeError('Installed managed/accompanying inventory differs')
+
+
 class Native:
     def __init__(self, root=ROOT):
         self.root = Path(root)
@@ -153,8 +175,7 @@ class Native:
         before = self.state('before4')
         if len(before['schema']) != 4:
             raise RuntimeError('Not schema4')
-        if before['code'] != json.loads((self.root/'baseline-code.json').read_text()):
-            raise RuntimeError('Installed baseline code differs from frozen Git import')
+        check_installed(before, json.loads((self.root/'baseline-code.json').read_text()))
         self.backup('s105-schema4')
         self.restore('s105-schema4')
         compare_state(before, self.state('restored4'))
@@ -171,8 +192,8 @@ class Native:
         if upgraded['documents'] != before['documents']:
             raise RuntimeError('Pre-existing documents changed')
         expected = json.loads((self.root/'expected-code.json').read_text())
-        if upgraded['code'] != expected:
-            raise RuntimeError('Installed managed code differs from frozen candidate')
+        baseline = json.loads((self.root/'baseline-code.json').read_text())
+        check_installed(upgraded, expected, preserved=baseline)
         self.probe('target6')
         self.probe('verify6')
         state6 = self.state('before6')
@@ -198,8 +219,7 @@ class Native:
         with zipfile.ZipFile(self.root/'fault.zip') as fault:
             fault_code = {name.removeprefix('sources/portal/'): hashlib.sha256(fault.read(name)).hexdigest()
                           for name in fault.namelist() if name.startswith('sources/portal/')}
-        if failed['code'] != fault_code:
-            raise RuntimeError('Failure occurred before installing the faulty managed code')
+        check_installed(failed, fault_code, preserved=baseline)
         if not closed or failed['schema'] != before['schema'] or 's105_fault_marker' in failed['tables'] or 'affair' in failed['tables']:
             raise RuntimeError('Failed migration was not atomic or did not leave the app closed')
         self.restore('s105-schema4')
@@ -227,7 +247,7 @@ class Native:
 
 def compare_state(expected, actual):
     # Deliberately exclude volatile projection.json; real collector refresh is logged.
-    for key in ('schema', 'tables', 'documents', 'code', 'permissions', 'config'):
+    for key in ('schema', 'tables', 'documents', 'code', 'accompanying', 'permissions', 'config'):
         if actual.get(key) != expected.get(key):
             raise RuntimeError('Restoration differs: '+key)
 
@@ -249,7 +269,14 @@ def main():
         with helper.blocked_smtp_egress():
             native.run('smtp-confinement', ['nft', 'list', 'table', 'inet', 'vigilance_mail_'+str(os.getpid())])
             getattr(native, sys.argv[1])()
-    except Exception:
+    except Exception as error:
+        reason = str(error)
+        if reason not in {'Installed managed/accompanying inventory differs', 'Not schema4',
+                          'Unclassified portal inventory member', 'Incomplete accompanying inventory'}:
+            reason = 'Native hook failed; see bounded command receipts'
+        (native.evidence/'failure.json').write_text(json.dumps({
+            'phase': sys.argv[1], 'error_type': type(error).__name__,
+            'message': reason}, indent=2)+'\n')
         # Fail closed while preserving evidence; no automatic recovery concealing a failure.
         if INSTALL.exists():
             (INSTALL/'.maintenance').touch()

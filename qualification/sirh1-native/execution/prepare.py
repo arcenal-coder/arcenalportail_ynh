@@ -75,8 +75,32 @@ def build_inputs(root, destination):
     return result
 
 
+def archive_contract(path):
+    """Fail closed on changes to the frozen package's actual copy contract."""
+    with zipfile.ZipFile(path) as archive:
+        install = archive.read('scripts/install').decode()
+        upgrade = archive.read('scripts/upgrade').decode()
+        if install.count('cp -a ../sources/portal/. "$install_dir/"') != 1:
+            raise ValueError('Install copy contract not recognized')
+        if upgrade.count('for directory in public src views migrations bin; do') != 1 or upgrade.count('cp -a "../sources/portal/$directory/." "$install_dir/$directory/"') != 1:
+            raise ValueError('Upgrade copy contract not recognized')
+        inventory = {n.removeprefix('sources/portal/'): hashlib.sha256(archive.read(n)).hexdigest()
+                     for n in archive.namelist() if n.startswith('sources/portal/') and not n.endswith('/')}
+    managed, accompanying = split_inventory(inventory)
+    return {'managed': managed, 'accompanying': accompanying,
+            'upgrade_directories': ['public', 'src', 'views', 'migrations', 'bin']}
+
+
+def split_inventory(inventory):
+    # Shared with the guest without importing runner preparation dependencies.
+    import guest
+    return guest.split_inventory(inventory)
+
+
 def verify_inputs(inputs):
     inputs = Path(inputs)
+    for name in ('baseline', 'candidate', 'fault'):
+        archive_contract(inputs/(name+'.zip'))
     control.inspect_candidate(inputs/'candidate.zip')
     if sha(inputs/'baseline.zip') != BASELINE_SHA:
         raise ValueError('Wrong reconstructed schema4 baseline')
@@ -117,7 +141,38 @@ def patch_checker(directory):
     fi
 
 '''
-    path.write_text(source.replace(POST_ANCHOR, hook+POST_ANCHOR))
+    early = '''    _PREUPGRADE "${commit}"
+    ret=$?
+    [ $ret -eq 0 ] || {
+        log_error "Pre-upgrade instruction failed"
+        return 1
+    }'''
+    replacement = '''    _PREUPGRADE "${commit}"
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        # Collect before returning; collection failure never masks the prehook.
+        (source "$S105_BRIDGE" && s105_preupgrade_failure "$ret") || :
+        return "$ret"
+    fi'''
+    if source.count(early) != 1:
+        raise ValueError('Pinned pre-upgrade return anchor not recognized; no write')
+    patched = source.replace(early, replacement).replace(POST_ANCHOR, hook+POST_ANCHOR)
+    for name, flags in (('preinstall', '-xeEu'), ('preupgrade', '-xeEu')):
+        anchor = '        LXC_EXEC "bash '+flags+' -o pipefail /'+name+'.sh"'
+        if patched.count(anchor) != 1:
+            raise ValueError('Pinned wrapper execution anchor not recognized; no write')
+        patched = patched.replace('_'+name.upper()+'() {', '_'+name.upper()+'() {\n    set +x  # Before any credential expansion, including the heredoc.')
+        # The filter receives the value through environment, never argv or logs.
+        command = '''        local wrapper_status
+        if LXC_EXEC "bash -eEu -o pipefail /NAME.sh" 2>&1 | S105_SECRET="$YUNO_PWD" python3 "$S105_SANITIZER" stream; then
+            wrapper_status=("${PIPESTATUS[@]}")
+        else
+            wrapper_status=("${PIPESTATUS[@]}")
+        fi
+        [ "${wrapper_status[1]}" -eq 0 ] || return 125
+        [ "${wrapper_status[0]}" -eq 0 ] || return "${wrapper_status[0]}"'''.replace('NAME', name)
+        patched = patched.replace(anchor, command)
+    path.write_text(patched)
 
 
 def plan_overlay(original, baseline_commit, baseline_code=None, mail_source=None):

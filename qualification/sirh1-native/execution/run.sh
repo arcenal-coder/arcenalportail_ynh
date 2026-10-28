@@ -1,5 +1,6 @@
 #!/bin/bash
 # FUTURE GitHub disposable runner ONLY. Never invoke from the desktop session.
+set +x
 set -euo pipefail
 test "${GITHUB_ACTIONS:-}" = true
 test "${GITHUB_EVENT_NAME:-}" = workflow_dispatch
@@ -34,12 +35,18 @@ python3 "$CHECKER/lib/parse_tests_toml.py" "$WORK/package" > "$WORK/package-plan
 cp "$CHECKER/lib/tests.sh" "$WORK/tests.sh.used"
 cp "$WORK/tools/native_mail_check.py" "$WORK/native_mail_check.py.used"
 status=0
+set +e
 (
     cd "$CHECKER"
     sudo env PATH="$WORK/env/bin:$PATH" YNHDEV_BACKEND=incus DIST=bookworm YNH_BRANCH=stable \
         S105_INPUTS="$S105_INPUTS" S105_BRIDGE="$S105_BRIDGE" S105_EVIDENCE="$S105_EVIDENCE" \
+        S105_SANITIZER="$E/sanitize.py" \
         "$CHECKER/package_check.sh" "$WORK/package"
-) || status=$?
+) 2>&1 | python3 "$E/sanitize.py" stream | tee "$WORK/checker.log"
+checker_status=("${PIPESTATUS[@]}")
+set -e
+status=${checker_status[0]}
+if [ "${checker_status[1]}" -ne 0 ] || [ "${checker_status[2]}" -ne 0 ]; then status=125; fi
 sudo chown -R "$USER:$USER" "$CHECKER" "$WORK"
 python3 "$CHECKER/package_linter/package_linter.py" "$WORK/package" --json > "$WORK/linter.json" || status=1
 commit=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["checker_control_commit"])' "$WORK/stage.json")

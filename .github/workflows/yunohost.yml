@@ -61,23 +61,17 @@ jobs:
         if: always()
         run: |
           sudo chown -R "$USER:$USER" "$RUNNER_TEMP/s105" "$RUNNER_TEMP/package_check" "$RUNNER_TEMP/s105-platform" || true
-      - name: Keep raw qualification evidence, no promotion
+      - name: Prepare and verify sanitized upload only
+        id: safe_evidence
         if: always()
+        run: |
+          python3 qualification/sirh1-native/execution/sanitize.py upload --raw "$RUNNER_TEMP" --output "$RUNNER_TEMP/s105-upload"
+          test -f "$RUNNER_TEMP/s105-upload/upload-verified.json"
+      - name: Keep verified sanitized evidence, no raw fallback or promotion
+        if: ${{ always() && steps.safe_evidence.outcome == 'success' }}
         uses: actions/upload-artifact@v4
         with:
           name: sirh1-native-ynh3
           retention-days: 7
           if-no-files-found: error
-          path: |
-            ${{ runner.temp }}/s105/evidence/
-            ${{ runner.temp }}/s105/stage.json
-            ${{ runner.temp }}/s105/package-plan.json
-            ${{ runner.temp }}/s105/linter.json
-            ${{ runner.temp }}/s105/package-qualification.json
-            ${{ runner.temp }}/s105/s105-result.json
-            ${{ runner.temp }}/s105/tests.sh.used
-            ${{ runner.temp }}/s105/native_mail_check.py.used
-            ${{ runner.temp }}/s105-platform/
-            ${{ runner.temp }}/package_check/results_*.json
-            ${{ runner.temp }}/package_check/full_log_*.log
-            ${{ runner.temp }}/package_check/arcenal-evidence/
+          path: ${{ runner.temp }}/s105-upload/

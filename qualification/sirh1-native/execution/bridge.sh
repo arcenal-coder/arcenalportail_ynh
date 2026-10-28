@@ -1,6 +1,18 @@
 #!/bin/bash
 # Sourced only inside the pinned package_check TEST_UPGRADE after mode assertion.
 # Use package_check's existing LXC_EXEC backend; no second container framework.
+s105_preupgrade_failure() {
+    local primary="$1" collected=0
+    mkdir -p "$S105_EVIDENCE" || return 1
+    s105_collect || collected=$?
+    python3 - "$S105_EVIDENCE" "$primary" "$collected" <<'PY'
+import json,sys,time
+from pathlib import Path
+path=Path(sys.argv[1])/('preupgrade-failure-'+str(time.time_ns())+'.json')
+path.write_text(json.dumps({'phase':'preupgrade','returncode':int(sys.argv[2]),'collection_returncode':int(sys.argv[3])})+'\n')
+PY
+}
+
 s105_send() {
     local source="$1" target="$2" piece
     LXC_EXEC "python3 -c 'from pathlib import Path; Path(\"$target.b64\").write_text(\"\")'" || return 1

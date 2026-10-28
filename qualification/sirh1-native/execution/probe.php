@@ -90,11 +90,14 @@ if($action==='context') {
     }ksort($files);
     $code=[];
     foreach(['src','bin','views','public','migrations'] as $tree){
+        expect(is_dir($install.'/'.$tree)&&!is_link($install.'/'.$tree),'Missing or linked managed directory');
         $iterator=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($install.'/'.$tree,FilesystemIterator::SKIP_DOTS));
-        foreach($iterator as $file)if($file->isFile())$code[substr($file->getPathname(),strlen($install)+1)]=hash_file('sha256',$file->getPathname());
+        foreach($iterator as $file){expect(!$file->isLink(),'No linked managed code');if($file->isFile())$code[substr($file->getPathname(),strlen($install)+1)]=hash_file('sha256',$file->getPathname());}
     }ksort($code);
+    $accompanying=[];
+    foreach(['COPYING','README.md','config.example.php'] as $name){expect(is_file($install.'/'.$name)&&!is_link($install.'/'.$name),'Missing or linked accompanying file');$accompanying[$name]=hash_file('sha256',$install.'/'.$name);}
     $permissions=[];foreach([$install,$data,$install.'/config.php',$install.'/application-settings.php'] as $path){$s=stat($path);$permissions[$path]=['mode'=>$s['mode']&0777,'uid'=>$s['uid'],'gid'=>$s['gid']];}
-    $result=['schema'=>$db->rows('SELECT * FROM schema_version ORDER BY version'),'tables'=>$tables,'documents'=>$files,'code'=>$code,'permissions'=>$permissions,
+    $result=['schema'=>$db->rows('SELECT * FROM schema_version ORDER BY version'),'tables'=>$tables,'documents'=>$files,'code'=>$code,'accompanying'=>$accompanying,'permissions'=>$permissions,
              'config'=>['config.php'=>hash_file('sha256',$install.'/config.php'),'application-settings.php'=>hash_file('sha256',$install.'/application-settings.php')]];
 } else throw new InvalidArgumentException('Unknown fixture operation');
 echo json_encode($result,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE)."\n";

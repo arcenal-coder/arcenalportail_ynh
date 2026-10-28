@@ -67,6 +67,20 @@ def check_files(files):
 
 def collect(work, inputs):
     work, inputs = Path(work), Path(inputs)
+    failures = sorted((work/'evidence').glob('preupgrade-failure-*.json'))
+    if failures:
+        primary = json.loads(failures[0].read_text())
+        for archive in sorted((work/'evidence').glob('*.tar.gz')):
+            try:
+                files = read_tar(archive)
+                if 'failure.json' in files:
+                    primary['guest'] = json.loads(files['failure.json'])
+            except (OSError, ValueError, KeyError, tarfile.TarError):
+                primary['collection_error'] = 'Guest archive unreadable; primary failure retained'
+        return {'technical_cycle': 'FAILED_OR_INCOMPLETE', 's1_05_complete': False,
+                'historical_equivalence': 'INDETERMINATE', 'primary_failure': primary,
+                'qualification_present': (work/'package-qualification.json').is_file()}
+    work, inputs = Path(work), Path(inputs)
     receipt = prepare.verify_inputs(inputs)
     stage = json.loads((work/'stage.json').read_text())
     qualified = json.loads((work/'package-qualification.json').read_text())
@@ -94,20 +108,18 @@ def collect(work, inputs):
     for name in ('restored6', 'final6'):
         guest.compare_state(states['before6'], states[name])
     before, upgraded, failed = states['before4'], states['upgraded6'], states['failed-migration4']
-    if before['code'] != json.loads((inputs/'expected-baseline-code.json').read_text()):
-        raise ValueError('Actual baseline code differs from frozen Git import')
+    baseline = json.loads((inputs/'expected-baseline-code.json').read_text())
+    guest.check_installed(before, baseline)
     if len(before['schema']) != 4 or len(upgraded['schema']) != 6 or upgraded['schema'][:4] != before['schema']:
         raise ValueError('Raw migration states do not show 4→6')
     if failed['schema'] != before['schema'] or failed['tables'] != before['tables'] or 's105_fault_marker' in failed['tables']:
         raise ValueError('Failed migration did not preserve schema4 and business data')
     expected = json.loads((inputs/'expected-code.json').read_text())
-    if upgraded['code'] != expected:
-        raise ValueError('Actual managed code differs from frozen ZIP')
+    guest.check_installed(upgraded, expected, preserved=baseline)
     with zipfile.ZipFile(inputs/'fault.zip') as fault:
         fault_code = {name.removeprefix('sources/portal/'): hashlib.sha256(fault.read(name)).hexdigest()
                       for name in fault.namelist() if name.startswith('sources/portal/')}
-    if failed['code'] != fault_code:
-        raise ValueError('No evidence that the faulty managed code reached the guest')
+    guest.check_installed(failed, fault_code, preserved=baseline)
     if {name: upgraded['tables'].get(name) for name in before['tables']} != before['tables'] or upgraded['documents'] != before['documents']:
         raise ValueError('Raw upgrade conservation differs')
     if json.loads(files['platform.json']) != '12.1.41.2':
@@ -127,7 +139,8 @@ def main():
     parser.add_argument('--inputs', type=Path, required=True)
     args = parser.parse_args()
     try:
-        result, status = collect(args.work, args.inputs), 0
+        result = collect(args.work, args.inputs)
+        status = 0 if result['technical_cycle'] == 'COMPLETED' else 1
     except (OSError, ValueError, KeyError, TypeError, RuntimeError, tarfile.TarError) as error:
         result, status = {'technical_cycle': 'FAILED_OR_INCOMPLETE', 's1_05_complete': False,
                           'historical_equivalence': 'INDETERMINATE', 'error': str(error)}, 1
